@@ -1,8 +1,11 @@
 """Grounded retrieval with citations.
 
-The ``score_threshold`` is the mechanism behind *grounded refusals*: when no
-chunk is close enough to the query, ``retrieve`` returns an empty result and the
-agent is instructed to say it doesn't know rather than invent an answer.
+The ``min_relevance`` floor is the mechanism behind *grounded refusals*: when no
+chunk is similar enough to the query, ``retrieve`` returns an empty result and
+the agent is instructed to say it doesn't know rather than invent an answer.
+
+Scores are normalized relevance in ``[0, 1]`` (higher = closer) rather than raw
+distance, so the threshold reads intuitively and the UI can show a confidence.
 """
 
 from __future__ import annotations
@@ -17,12 +20,13 @@ from agentforge.rag.store import get_vector_store
 
 @dataclass
 class Citation:
-    """A single retrieved chunk, traceable back to its source document."""
+    """A single retrieved chunk, traceable back to its source document/section."""
 
     source: str
     title: str
     snippet: str
-    score: float  # cosine distance — lower is closer
+    score: float  # normalized relevance in [0, 1] — higher is more relevant
+    section: str = ""
 
 
 @dataclass
@@ -40,7 +44,9 @@ class RetrievalResult:
         parts = []
         for i, doc in enumerate(self.documents, start=1):
             source = doc.metadata.get("source", "unknown")
-            parts.append(f"[{i}] (source: {source})\n{doc.page_content}")
+            section = doc.metadata.get("section", "")
+            header = f"[{i}] (source: {source}" + (f" › {section}" if section else "") + ")"
+            parts.append(f"{header}\n{doc.page_content}")
         return "\n\n".join(parts)
 
 
@@ -48,21 +54,21 @@ def retrieve(query: str) -> RetrievalResult:
     settings = get_settings()
     store = get_vector_store()
 
-    # PGVector returns (document, distance) pairs; distance is cosine distance,
-    # so smaller means more similar.
-    scored = store.similarity_search_with_score(query, k=settings.retrieval_k)
+    # Normalized relevance in [0, 1]; higher means more similar.
+    scored = store.similarity_search_with_relevance_scores(query, k=settings.retrieval_k)
 
     result = RetrievalResult()
-    for doc, distance in scored:
-        if distance > settings.score_threshold:
-            continue  # too far away — drop it (this is what enables refusals)
+    for doc, relevance in scored:
+        if relevance < settings.min_relevance:
+            continue  # not relevant enough — drop it (this is what enables refusals)
         result.documents.append(doc)
         result.citations.append(
             Citation(
                 source=doc.metadata.get("source", "unknown"),
                 title=doc.metadata.get("title", ""),
+                section=doc.metadata.get("section", ""),
                 snippet=doc.page_content[:240].strip(),
-                score=round(float(distance), 4),
+                score=round(float(relevance), 4),
             )
         )
     return result

@@ -48,9 +48,11 @@ class Settings(BaseSettings):
 
     # --- RAG retrieval ---------------------------------------------------
     retrieval_k: int = Field(default=4)
-    # Cosine-distance floor; chunks further than this are dropped, which is how
-    # the agent produces grounded refusals instead of hallucinating.
-    score_threshold: float = Field(default=0.35)
+    # Normalized relevance floor in [0, 1] (higher = more similar). Chunks below
+    # it are dropped, which is how the agent produces grounded refusals instead
+    # of hallucinating. Calibrate per embedding model — the absolute number
+    # shifts between models; 0.2 is a permissive default for nomic-embed-text.
+    min_relevance: float = Field(default=0.2)
     chunk_size: int = Field(default=900)
     chunk_overlap: int = Field(default=150)
 

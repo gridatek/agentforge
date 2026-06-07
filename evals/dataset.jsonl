@@ -1,5 +1,10 @@
 {"id": "aml-threshold", "question": "What transaction amount triggers enhanced due diligence?", "expect_grounded": true, "expected_keywords": ["10,000", "enhanced due diligence"]}
+{"id": "edd-approval", "question": "What approval is needed before proceeding with enhanced due diligence?", "expect_grounded": true, "expected_keywords": ["senior-management"]}
 {"id": "kyc-docs", "question": "Which documents are required to verify a new individual customer's identity?", "expect_grounded": true, "expected_keywords": ["passport", "proof of address"]}
+{"id": "corporate-kyc", "question": "What identification is needed for corporate customers' beneficial owners?", "expect_grounded": true, "expected_keywords": ["25%"]}
 {"id": "savings-rate", "question": "What is the interest rate on the Everyday Savings account?", "expect_grounded": true, "expected_keywords": ["3.5"]}
-{"id": "out-of-scope", "question": "What is the capital of France?", "expect_grounded": false, "expect_refusal": true}
+{"id": "saver-plus-rate", "question": "What interest rate does the Everyday Saver Plus pay?", "expect_grounded": true, "expected_keywords": ["4.1"]}
+{"id": "saver-plus-min", "question": "What is the minimum opening balance for Everyday Saver Plus?", "expect_grounded": true, "expected_keywords": ["5,000"]}
 {"id": "sanctions-hit", "question": "What must staff do if a customer matches a sanctions list?", "expect_grounded": true, "expected_keywords": ["freeze", "report"]}
+{"id": "out-of-scope", "question": "What is the capital of France?", "expect_grounded": false, "expect_refusal": true}
+{"id": "out-of-scope-weather", "question": "Will it rain tomorrow in London?", "expect_grounded": false, "expect_refusal": true}
