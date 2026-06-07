@@ -12,6 +12,7 @@ checkpointer, keyed by ``thread_id``.
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -136,8 +137,20 @@ async def chat_stream(req: ChatRequest) -> EventSourceResponse:
         snapshot = graph.get_state(config)
         values = snapshot.values
         if snapshot.next:  # paused at an interrupt
-            yield {"event": "approval_required", "data": str(values.get("proposed_action"))}
+            yield {
+                "event": "approval_required",
+                "data": json.dumps(values.get("proposed_action") or {}),
+            }
         else:
-            yield {"event": "done", "data": values.get("answer", "")}
+            yield {
+                "event": "done",
+                "data": json.dumps(
+                    {
+                        "answer": values.get("answer", ""),
+                        "citations": values.get("citations", []),
+                        "pii_found": values.get("pii_found", []),
+                    }
+                ),
+            }
 
     return EventSourceResponse(event_generator())
