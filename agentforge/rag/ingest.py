@@ -46,6 +46,18 @@ def ingest(corpus_dir: str | Path) -> int:
     return len(chunks)
 
 
+def ingest_if_empty(corpus_dir: str | Path) -> int:
+    """Ingest only when the store is empty — idempotent across restarts.
+
+    Returns the number of chunks written (0 if already populated).
+    """
+    from agentforge.rag.store import collection_is_empty
+
+    if not collection_is_empty():
+        return 0
+    return ingest(corpus_dir)
+
+
 def main() -> None:
     corpus_dir = sys.argv[1] if len(sys.argv) > 1 else "examples/banking-compliance/corpus"
     count = ingest(corpus_dir)

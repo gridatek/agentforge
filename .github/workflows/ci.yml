@@ -21,6 +21,14 @@ jobs:
       - name: Unit tests
         run: pytest tests/ -q
 
+  # Validate the compose file (syntax + interpolation) — cheap, no image build.
+  compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: docker compose config
+        run: docker compose config --quiet
+
   # Eval gate — blocks the deploy if retrieval/faithfulness regresses.
   # Runs only when an ANTHROPIC_API_KEY secret is configured (skipped on forks).
   eval-gate:
