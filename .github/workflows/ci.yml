@@ -29,6 +29,17 @@ jobs:
       - name: docker compose config
         run: docker compose config --quiet
 
+  # Build the Angular console so TypeScript/template errors fail the build.
+  console-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/console
+    steps:
+      - uses: actions/checkout@v5
+      - run: npm install
+      - run: npm run build
+
   # Eval gate — blocks the deploy if retrieval/faithfulness regresses.
   # Runs only when an ANTHROPIC_API_KEY secret is configured (skipped on forks).
   eval-gate:
