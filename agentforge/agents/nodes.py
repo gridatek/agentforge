@@ -14,7 +14,7 @@ The flow encodes the platform's safety posture:
 
 from __future__ import annotations
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.types import interrupt
 
 from agentforge.agents.state import AgentState
@@ -75,17 +75,24 @@ def generate_node(state: AgentState) -> dict:
     ]
     response = model.invoke(messages)
 
-    # Did the model request a sensitive tool? If so, hand off to human approval.
-    for call in getattr(response, "tool_calls", []) or []:
-        if requires_approval(call["name"]):
-            return {
-                "messages": [response],
-                "proposed_action": {
-                    "id": call.get("id"),
-                    "name": call["name"],
-                    "args": call.get("args", {}),
-                },
-            }
+    tool_calls = getattr(response, "tool_calls", []) or []
+    if tool_calls:
+        call = tool_calls[0]
+        action = {
+            "id": call.get("id"),
+            "name": call["name"],
+            "args": call.get("args", {}),
+        }
+        # Sensitive tools hand off to human approval before running.
+        if requires_approval(action["name"]):
+            return {"messages": [response], "proposed_action": action}
+        # Non-sensitive tools execute immediately — no human gate needed.
+        result = execute_tool(action["name"], action["args"])
+        return {
+            "messages": [response, ToolMessage(result, tool_call_id=action["id"])],
+            "answer": result,
+            "proposed_action": None,
+        }
 
     return {"messages": [response], "answer": response.content, "proposed_action": None}
 
