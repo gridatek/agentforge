@@ -28,7 +28,8 @@ def _cmd_ask(args: argparse.Namespace) -> None:
     else:
         print(result.get("answer", ""))
         for c in result.get("citations", []):
-            print(f"  - {c['source']} (distance={c['score']})")
+            section = f" › {c['section']}" if c.get("section") else ""
+            print(f"  - {c['source']}{section} (relevance={c['score']})")
 
 
 def _cmd_serve(args: argparse.Namespace) -> None:
