@@ -1,0 +1,21 @@
+# Reference example: banking-compliance assistant.
+# Documents the intended configuration; the platform reads its settings from
+# the environment (.env). This file is a human-facing description of the example.
+
+name: banking-compliance
+description: >
+  RAG over AML/KYC policy and product sheets, with human-in-the-loop approval
+  before any sensitive action (case escalation, SAR filing).
+
+corpus: ./corpus
+
+# Sensitive tools that always require approval (mirrors SENSITIVE_TOOLS default).
+sensitive_tools:
+  - escalate_case
+  - file_sar
+
+suggested_env:
+  CHAT_MODEL: anthropic:claude-opus-4-8
+  EMBEDDING_MODEL: ollama:nomic-embed-text
+  EMBEDDING_DIM: 768
+  SCORE_THRESHOLD: 0.35

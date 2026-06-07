@@ -31,25 +31,25 @@ A **banking compliance assistant** ships as the reference example — RAG over p
 ## Architecture (high level)
 
 ```
-                 ┌──────────────────────────┐
-                 │   Angular admin console   │   chat · traces · evals · approvals
-                 └────────────┬─────────────┘
-                              │ REST / SSE
-                 ┌────────────┴─────────────┐
-                 │     FastAPI gateway       │
-                 └────────────┬─────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
- ┌──────┴──────┐     ┌────────┴────────┐     ┌──────┴───────┐
- │  LangGraph  │     │   RAG pipeline   │     │ Observability │
- │   agents    │◄───►│  (pgvector)      │     │  adapter      │
- │  (+ HITL)   │     │                  │     │ LangSmith /   │
- └──────┬──────┘     └─────────────────┘     │ Langfuse      │
-        │                                     └──────────────┘
- ┌──────┴──────┐
- │  LLM layer  │  Claude · OpenAI · Ollama
- └─────────────┘
+        ┌───────────────────────────┐
+        │   Angular admin console   │  chat · traces · evals · approvals
+        └─────────────┬─────────────┘
+                      │ REST / SSE
+        ┌─────────────┴─────────────┐
+        │      FastAPI gateway      │
+        └─────────────┬─────────────┘
+                      │
+      ┌───────────────┼───────────────┐
+      ▼               ▼               ▼
+ ┌──────────┐    ┌──────────┐  ┌───────────────┐
+ │ LangGraph│    │   RAG    │  │ Observability │
+ │  agents  │◄──►│ pipeline │  │   adapter     │
+ │ (+ HITL) │    │(pgvector)│  │  LangSmith /  │
+ └────┬─────┘    └──────────┘  │   Langfuse    │
+      │                        └───────────────┘
+ ┌────┴─────┐
+ │ LLM layer│  Claude · OpenAI · Ollama
+ └──────────┘
 ```
 
 ## Tech stack
@@ -76,23 +76,32 @@ docker compose up
 # → console at http://localhost:4200, API at http://localhost:8000
 ```
 
-## Repo structure (planned)
+## Repo structure
+
+The scaffold for every phase is in place — a runnable skeleton you extend.
 
 ```
 agentforge/
+├── agentforge/              # Python package
+│   ├── llm/                 # provider-agnostic chat + embeddings layer
+│   ├── rag/                 # ingestion, chunking, pgvector store, retrieval
+│   ├── agents/              # LangGraph graph, nodes, state, tools, HITL
+│   ├── guardrails/          # PII redaction, tool scoping
+│   ├── observability/       # LangSmith / Langfuse adapters
+│   ├── api/                 # FastAPI gateway (chat + approvals, SSE)
+│   ├── config.py            # env-driven settings
+│   └── cli.py               # agentforge ingest | ask | serve
 ├── apps/
-│   ├── api/              # FastAPI gateway
-│   ├── agents/           # LangGraph graphs, nodes, tools
-│   ├── rag/              # ingestion, retrieval
-│   └── console/          # Angular admin UI
-├── packages/
-│   ├── observability/    # LangSmith / Langfuse adapters
-│   └── guardrails/       # middleware: PII, tool scoping
+│   └── console/             # Angular admin UI
 ├── examples/
-│   └── banking-compliance/   # reference example + sample corpus
-├── evals/                # datasets + eval suite (CI gate)
-├── docker-compose.yml
-├── .github/workflows/    # CI/CD
+│   └── banking-compliance/  # reference example + sample corpus
+├── evals/                   # eval dataset + CI gate
+├── tests/                   # unit tests (no API keys needed)
+├── db/init.sql              # enables pgvector
+├── docker-compose.yml       # db + api + console
+├── Dockerfile
+├── .github/workflows/ci.yml # lint · unit tests · eval gate
+├── pyproject.toml
 ├── CONTRIBUTING.md
 └── README.md
 ```
