@@ -12,7 +12,9 @@ checkpointer, keyed by ``thread_id``.
 
 from __future__ import annotations
 
+import logging
 import uuid
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI
@@ -30,20 +32,35 @@ from agentforge.api.schemas import (
 from agentforge.config import get_settings
 from agentforge.observability import get_callbacks, setup_observability
 
-app = FastAPI(title="AgentForge", version="0.1.0")
-
+logger = logging.getLogger("agentforge.api")
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    setup_observability()
+    if settings.auto_ingest:
+        try:
+            from agentforge.rag.ingest import ingest_if_empty
+
+            count = ingest_if_empty(settings.auto_ingest_corpus)
+            if count:
+                logger.info(
+                    "Auto-ingested %d chunks from %s", count, settings.auto_ingest_corpus
+                )
+        except Exception:
+            # Never let an ingest hiccup take down the API — log and serve.
+            logger.warning("Auto-ingest skipped (store/model not ready)", exc_info=True)
+    yield
+
+
+app = FastAPI(title="AgentForge", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def _startup() -> None:
-    setup_observability()
 
 
 def _run_config(thread_id: str) -> dict[str, Any]:

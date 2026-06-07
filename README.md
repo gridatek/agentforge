@@ -66,15 +66,22 @@ A **banking compliance assistant** ships as the reference example — RAG over p
 | CI/CD            | GitHub Actions                           | Eval-gated deploys                         |
 | Production       | Kubernetes (or LangGraph Platform)       | Self-hosted or managed                     |
 
-## Quickstart (target experience)
+## Quickstart
+
+Zero config — no API key required. A bundled Ollama serves the chat model and
+embeddings, the models are pulled automatically, and the sample banking corpus
+is ingested on first boot.
 
 ```bash
 git clone https://github.com/gridatek/agentforge
 cd agentforge
-cp .env.example .env        # add your LLM provider key
 docker compose up
 # → console at http://localhost:4200, API at http://localhost:8000
 ```
+
+First boot pulls ~2.5 GB of local models. To use a cloud provider instead, drop
+a `.env` (see `.env.example`) — e.g. `CHAT_MODEL=anthropic:claude-opus-4-8` +
+`ANTHROPIC_API_KEY=…` — and those values override the local defaults.
 
 ## Repo structure
 

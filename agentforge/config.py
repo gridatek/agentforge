@@ -68,6 +68,13 @@ class Settings(BaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_host: str = Field(default="https://cloud.langfuse.com")
 
+    # --- Auto-ingest -----------------------------------------------------
+    # When true (set by docker-compose), the API ingests the corpus on startup
+    # if the vector store is empty — this is what makes `docker compose up`
+    # demo-able with no manual ingest step.
+    auto_ingest: bool = Field(default=False)
+    auto_ingest_corpus: str = Field(default="examples/banking-compliance/corpus")
+
     # --- API -------------------------------------------------------------
     api_host: str = Field(default="0.0.0.0")
     api_port: int = Field(default=8000)

@@ -1,8 +1,20 @@
-# One-command local run: `docker compose up`
+# Zero-config local run:
+#
+#   docker compose up
 #   → console at http://localhost:4200, API at http://localhost:8000
 #
-# After the stack is up, ingest the sample corpus once:
-#   docker compose run --rm api agentforge ingest examples/banking-compliance/corpus
+# Works out of the box with NO API key: a bundled Ollama serves both the chat
+# model and embeddings, the models are pulled automatically, and the sample
+# banking corpus is ingested on first API boot.
+#
+# To use a cloud provider instead, set vars in a .env file (auto-loaded for
+# interpolation), e.g.:
+#   CHAT_MODEL=anthropic:claude-opus-4-8
+#   ANTHROPIC_API_KEY=sk-ant-...
+#   EMBEDDING_MODEL=openai:text-embedding-3-small
+#   EMBEDDING_DIM=1536
+#
+# Note: first boot pulls ~2.5 GB of models; give Docker a few GB of RAM.
 
 services:
   db:
@@ -22,16 +34,51 @@ services:
       timeout: 5s
       retries: 10
 
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: pull the chat + embedding models, then exit. The API waits for
+  # this to finish so embeddings are available at ingest time.
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull nomic-embed-text && ollama pull llama3.2"]
+    restart: "no"
+
   api:
     build: .
-    env_file: .env
     environment:
       DATABASE_URL: postgresql+psycopg://agentforge:agentforge@db:5432/agentforge
+      # Defaults to local Ollama; override any of these via .env (interpolation).
+      CHAT_MODEL: ${CHAT_MODEL:-ollama:llama3.2}
+      FAST_MODEL: ${FAST_MODEL:-ollama:llama3.2}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-ollama:nomic-embed-text}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
+      OLLAMA_BASE_URL: http://ollama:11434
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OBSERVABILITY_BACKEND: ${OBSERVABILITY_BACKEND:-none}
+      AUTO_INGEST: "true"
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
     volumes:
       - ./examples:/app/examples:ro
 
@@ -44,3 +91,4 @@ services:
 
 volumes:
   pgdata:
+  ollama:
