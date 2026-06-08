@@ -59,7 +59,7 @@ A **banking compliance assistant** ships as the reference example — RAG over p
 | Language         | Python                                   | Backend + agents                           |
 | Agent framework  | LangChain 1.0 / LangGraph 1.0            | Stable since Oct 2025, no breaking changes until 2.0 |
 | API              | FastAPI                                  | REST + streaming                           |
-| Vector store     | Postgres + pgvector                      | Self-hostable; Qdrant adapter planned      |
+| Vector store     | Postgres + pgvector (default) or Qdrant  | Pluggable via `VECTOR_STORE_BACKEND`       |
 | Observability    | LangSmith (default) · Langfuse (OSS)     | Pluggable backend                          |
 | Frontend         | Angular                                  | Management console                         |
 | Packaging        | Docker / Docker Compose                  | One-command local run                      |
@@ -88,6 +88,13 @@ the end-to-end flow (grounded answers, refusals, streaming, HITL approval).
 
 For deploying beyond your laptop — published GHCR images and a release pipeline —
 see [`deploy/README.md`](deploy/README.md).
+
+Swap the defaults with compose overlays: use Qdrant instead of pgvector, or add a
+self-hosted Langfuse for tracing.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.qdrant.yml up --build
+```
 
 ## Repo structure
 

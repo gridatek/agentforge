@@ -40,11 +40,16 @@ class Settings(BaseSettings):
     # Must match the embedding model's output dimensionality.
     embedding_dim: int = Field(default=768)
 
-    # --- Vector store (Postgres + pgvector) ------------------------------
+    # --- Vector store ----------------------------------------------------
+    # Which backend holds the embeddings: "pgvector" (default) or "qdrant".
+    vector_store_backend: str = Field(default="pgvector")
     database_url: str = Field(
         default="postgresql+psycopg://agentforge:agentforge@localhost:5432/agentforge"
     )
     collection_name: str = Field(default="agentforge_documents")
+    # Qdrant connection (used when vector_store_backend == "qdrant").
+    qdrant_url: str = Field(default="http://localhost:6333")
+    qdrant_api_key: str | None = None
     # Graph checkpointer backend: "memory" (in-process, dev/tests) or "postgres"
     # (durable — HITL state survives restarts and is shared across replicas).
     # docker-compose / k8s set this to "postgres".
