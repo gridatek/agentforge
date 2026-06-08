@@ -1,0 +1,49 @@
+# One-shot corpus ingest. Run after the DB is up and the Secret/ConfigMap exist:
+#   kubectl apply -f ingest-job.yaml
+#   kubectl -n agentforge wait --for=condition=complete job/ingest --timeout=300s
+# Re-runnable: ingest is idempotent (skips when the collection already has data).
+# Delete the old Job first to re-run: kubectl -n agentforge delete job ingest.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ingest
+  namespace: agentforge
+  labels:
+    app.kubernetes.io/name: ingest
+    app.kubernetes.io/part-of: agentforge
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ingest
+        app.kubernetes.io/part-of: agentforge
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ingest
+          image: ghcr.io/gridatek/agentforge-api:latest
+          command:
+            - python
+            - -m
+            - agentforge.rag.ingest
+            - examples/banking-compliance/corpus
+          envFrom:
+            - configMapRef:
+                name: agentforge-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: agentforge-secrets
+                  key: DATABASE_URL
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agentforge-secrets
+                  key: OPENAI_API_KEY
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agentforge-secrets
+                  key: ANTHROPIC_API_KEY

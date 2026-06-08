@@ -1,0 +1,22 @@
+# Non-secret runtime config, consumed via envFrom by the api + ingest pods.
+# Defaults to a cloud provider (k8s clusters rarely want a bundled Ollama).
+# Secret values (API keys, DB password/URL) live in the Secret — see
+# secret.example.yaml. The full env contract is documented in ../../.env.example.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentforge-config
+  namespace: agentforge
+  labels:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/part-of: agentforge
+data:
+  CHAT_MODEL: "anthropic:claude-opus-4-8"
+  FAST_MODEL: "anthropic:claude-haiku-4-5"
+  EMBEDDING_MODEL: "openai:text-embedding-3-small"
+  EMBEDDING_DIM: "1536"
+  MIN_RELEVANCE: "0.2"
+  RETRIEVAL_K: "4"
+  OBSERVABILITY_BACKEND: "none"
+  # Production ingests via a one-shot Job, not at API startup.
+  AUTO_INGEST: "false"

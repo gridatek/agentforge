@@ -1,0 +1,37 @@
+# Template ingress — edit the hosts and apply, or delete this file and expose
+# the Services however your cluster prefers (LoadBalancer, gateway, etc.).
+#
+# NOTE: the console calls the API from the browser using the build-time apiBase
+# in apps/console/src/environments/environment.ts (default http://localhost:8000).
+# For a real cluster, rebuild the console image with that value pointing at the
+# API host below before relying on this ingress. Same-origin proxying is a
+# planned follow-up.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentforge
+  namespace: agentforge
+  labels:
+    app.kubernetes.io/part-of: agentforge
+spec:
+  rules:
+    - host: agentforge.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: console
+                port:
+                  number: 80
+    - host: api.agentforge.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000

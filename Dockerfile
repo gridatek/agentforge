@@ -15,6 +15,10 @@ COPY pyproject.toml README.md ./
 COPY agentforge ./agentforge
 RUN pip install --upgrade pip && pip install .
 
+# Bundle the reference corpus so the image is self-contained for ingest
+# (compose bind-mounts ./examples over this; k8s/standalone runs rely on it).
+COPY examples ./examples
+
 # Run as an unprivileged user (own /app so volume mounts/ingest still work).
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser

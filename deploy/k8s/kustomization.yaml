@@ -1,0 +1,23 @@
+# The long-running stack. Apply with:  kubectl apply -k deploy/k8s
+# (Apply the Secret and the one-shot ingest Job separately — they are not part
+# of this kustomization; see deploy/README.md.)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: agentforge
+
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - config.yaml
+  - api.yaml
+  - console.yaml
+  - ingress.yaml
+
+# Pin a released version here instead of :latest for reproducible deploys, e.g.
+#   newTag: 0.1.0
+images:
+  - name: ghcr.io/gridatek/agentforge-api
+    newTag: latest
+  - name: ghcr.io/gridatek/agentforge-console
+    newTag: latest
