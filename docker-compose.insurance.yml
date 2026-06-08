@@ -1,0 +1,20 @@
+# Run the insurance-support example instead of banking-compliance. Overlay on
+# the base compose:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.insurance.yml up
+#
+# Uses a separate collection so it can coexist with the banking data in the same
+# Postgres; auto-ingest loads the insurance corpus into it on first boot.
+
+services:
+  api:
+    environment:
+      COLLECTION_NAME: insurance_support
+      AUTO_INGEST_CORPUS: examples/insurance-support/corpus
+      SYSTEM_PROMPT: >
+        You are AgentForge, an auto-insurance support assistant. Answer ONLY from
+        the provided context and cite sources inline as [1], [2], …. If the
+        context does not contain the answer, say you don't know and that the
+        question is out of scope; never invent coverage, limits, or figures. If a
+        claim shows signs of fraud, do not approve or deny it — escalate to a
+        human adjuster using the appropriate tool.
