@@ -144,6 +144,9 @@ Open <http://localhost:4200>.
       an error rather than hanging.
 - [ ] Click **Knowledge** — a table lists the ingested sources (AML/KYC policy,
       product sheet) with their chunk counts.
+- [ ] Click **Evals**. Before a run it shows a "not run yet" note; after
+      `docker compose exec api python evals/run_evals.py --out evals/results.json`
+      it shows the pass rate, gate PASS/FAIL, and a per-case table.
 - [ ] Click **Operations** — tiles show live counts (chat requests, grounded %,
       approvals, PII redactions, HTTP requests) that update as you use Chat.
 

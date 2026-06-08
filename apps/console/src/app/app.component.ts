@@ -15,6 +15,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           </a>
           <a routerLink="/approvals" routerLinkActive="active">Approvals</a>
           <a routerLink="/knowledge" routerLinkActive="active">Knowledge</a>
+          <a routerLink="/evals" routerLinkActive="active">Evals</a>
           <a routerLink="/ops" routerLinkActive="active">Operations</a>
         </nav>
       </header>

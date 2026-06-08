@@ -19,9 +19,26 @@ import argparse
 import json
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 REFUSAL_MARKERS = ("don't know", "do not know", "out of scope", "cannot", "no relevant")
+
+
+def _write_report(path: Path, threshold: float, results: list[dict]) -> None:
+    """Persist a structured run so the console's Eval view can read it."""
+    passed = sum(r["passed"] for r in results)
+    total = len(results)
+    report = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "threshold": threshold,
+        "passed": passed,
+        "total": total,
+        "pass_rate": passed / total if total else 0.0,
+        "cases": results,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
 def _load_dataset(path: Path) -> list[dict]:
@@ -56,6 +73,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run AgentForge regression evals")
     parser.add_argument("--dataset", default=str(Path(__file__).parent / "dataset.jsonl"))
     parser.add_argument("--threshold", type=float, default=0.8)
+    parser.add_argument("--out", help="Write a JSON report here (for the console Eval view).")
     args = parser.parse_args()
 
     from agentforge.agents import get_compiled_graph
@@ -63,14 +81,22 @@ def main() -> int:
     graph = get_compiled_graph()
     cases = _load_dataset(Path(args.dataset))
 
-    passed = 0
+    results: list[dict] = []
     for case in cases:
         ok, detail = _evaluate_case(graph, case)
-        passed += ok
+        results.append(
+            {"id": case["id"], "question": case["question"], "passed": ok, "detail": detail}
+        )
         print(f"[{'PASS' if ok else 'FAIL'}] {case['id']}: {detail}")
 
+    passed = sum(r["passed"] for r in results)
     rate = passed / len(cases) if cases else 0.0
     print(f"\nPass rate: {passed}/{len(cases)} = {rate:.0%} (threshold {args.threshold:.0%})")
+
+    if args.out:
+        _write_report(Path(args.out), args.threshold, results)
+        print(f"Wrote report to {args.out}")
+
     return 0 if rate >= args.threshold else 1
 
 

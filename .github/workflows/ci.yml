@@ -127,4 +127,10 @@ jobs:
         run: python -m agentforge.rag.ingest examples/banking-compliance/corpus
       - name: Run eval gate
         if: steps.guard.outputs.have_key == 'true'
-        run: python evals/run_evals.py --threshold 0.8
+        run: python evals/run_evals.py --threshold 0.8 --out evals/results.json
+      - name: Upload eval report
+        if: steps.guard.outputs.have_key == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: evals/results.json

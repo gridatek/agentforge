@@ -45,3 +45,19 @@ class DocumentSummaryItem(BaseModel):
     source: str
     title: str
     chunks: int
+
+
+class EvalCase(BaseModel):
+    id: str
+    question: str
+    passed: bool
+    detail: str
+
+
+class EvalReport(BaseModel):
+    generated_at: str
+    threshold: float
+    passed: int
+    total: int
+    pass_rate: float
+    cases: list[EvalCase] = Field(default_factory=list)

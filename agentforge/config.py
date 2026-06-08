@@ -81,6 +81,11 @@ class Settings(BaseSettings):
     auto_ingest: bool = Field(default=False)
     auto_ingest_corpus: str = Field(default="examples/banking-compliance/corpus")
 
+    # --- Evals -----------------------------------------------------------
+    # JSON report written by evals/run_evals.py --out, served at GET /evals for
+    # the console's Eval view. Absent until a run produces it.
+    evals_results_path: str = Field(default="evals/results.json")
+
     # --- API -------------------------------------------------------------
     api_host: str = Field(default="0.0.0.0")
     api_port: int = Field(default=8000)

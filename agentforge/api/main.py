@@ -4,6 +4,7 @@ Endpoints:
 - ``GET  /health``        liveness probe.
 - ``GET  /metrics``       Prometheus metrics (HTTP + domain counters).
 - ``GET  /documents``     list ingested source documents + chunk counts.
+- ``GET  /evals``         latest eval report (or null if not run).
 - ``GET  /approvals``     list runs paused awaiting human approval.
 - ``POST /chat``          run the agent; may pause for approval.
 - ``POST /chat/stream``   stream the answer token-by-token over SSE.
@@ -34,6 +35,7 @@ from agentforge.api.schemas import (
     ChatRequest,
     ChatResponse,
     DocumentSummaryItem,
+    EvalReport,
     PendingAction,
     PendingApprovalItem,
 )
@@ -138,6 +140,14 @@ def _record_domain_metrics(resp: ChatResponse) -> None:
     if not resp.approval_required:
         grounded = "true" if resp.citations else "false"
         metrics.answers_total.labels(grounded).inc()
+
+
+@app.get("/evals", response_model=EvalReport | None)
+def evals() -> EvalReport | None:
+    from agentforge.api.evals import load_report
+
+    report = load_report()
+    return EvalReport(**report) if report else None
 
 
 @app.get("/documents", response_model=list[DocumentSummaryItem])
