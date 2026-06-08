@@ -1,11 +1,10 @@
-# Template ingress — edit the hosts and apply, or delete this file and expose
-# the Services however your cluster prefers (LoadBalancer, gateway, etc.).
+# Template ingress — edit the host and apply, or delete this file and expose the
+# console Service however your cluster prefers (LoadBalancer, gateway, etc.).
 #
-# NOTE: the console calls the API from the browser using the build-time apiBase
-# in apps/console/src/environments/environment.ts (default http://localhost:8000).
-# For a real cluster, rebuild the console image with that value pointing at the
-# API host below before relying on this ingress. Same-origin proxying is a
-# planned follow-up.
+# Only the console is exposed: it serves the SPA and reverse-proxies /api to the
+# API Service same-origin (see apps/console/default.conf.template), so the
+# browser never talks to the API host directly. To also expose the API publicly
+# (e.g. for curl), add a second host routing to the `api` Service on port 8000.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -25,13 +24,3 @@ spec:
                 name: console
                 port:
                   number: 80
-    - host: api.agentforge.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: api
-                port:
-                  number: 8000

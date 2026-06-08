@@ -166,7 +166,7 @@ docker compose down -v       # also wipe the DB + pulled models
 | `api` exits / can't reach DB | `db` not healthy yet — Compose should gate this; check `depends_on`. |
 | Auto-ingest skipped | `ollama-pull` didn't finish before `api` started. |
 | Empty citations on every question | `MIN_RELEVANCE` too strict for the embedding model — lower it in `.env`. |
-| Console can't reach API | CORS / `apiBase` — API allows `:4200`; check `environment.ts`. |
+| Console can't reach API | The console proxies `/api` to `API_UPSTREAM` (default `api:8000`); check the `api` service is up and on the same network. |
 | Slow / OOM on first boot | Model pull needs RAM+disk; give Docker more, or use a cloud provider via `.env`. |
 
 Found a discrepancy? That's exactly what this checklist is for — open an issue

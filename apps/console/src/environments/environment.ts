@@ -1,6 +1,6 @@
-// Base URL of the AgentForge API gateway. In docker-compose both the console
-// and the API are reachable on localhost. Override per environment via Angular
-// fileReplacements if you deploy them on different hosts.
+// The console calls the API same-origin under /api — nginx (prod) or the Angular
+// dev-server proxy (local `npm start`) forwards /api/* to the gateway. This keeps
+// one console image working in any environment with no build-time host baked in.
 export const environment = {
-  apiBase: 'http://localhost:8000',
+  apiBase: '/api',
 };
