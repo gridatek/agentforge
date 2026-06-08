@@ -74,9 +74,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # Buildx with the docker-container driver — required for GHA cache export.
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build ${{ matrix.name }} image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
           push: false
