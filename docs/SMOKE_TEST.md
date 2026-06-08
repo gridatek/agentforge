@@ -176,6 +176,16 @@ LANGCHAIN_API_KEY=ls-...
 
 - [ ] After a chat, traces for each graph node appear in the LangSmith project.
 
+For a fully self-hosted alternative, bring up the bundled Langfuse server and
+trace into it — see [`docs/OBSERVABILITY.md`](OBSERVABILITY.md):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.langfuse.yml up --build
+```
+
+- [ ] After wiring the project keys, traces for each graph node appear at
+      <http://localhost:3000>.
+
 ---
 
 ## Teardown

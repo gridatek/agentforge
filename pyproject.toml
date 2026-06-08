@@ -41,8 +41,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Fully self-hosted observability backend.
-langfuse = ["langfuse>=2.0"]
+# Fully self-hosted observability backend. Pinned to v2 to match the LangChain
+# CallbackHandler API and the single-container self-host in docker-compose.langfuse.yml.
+langfuse = ["langfuse>=2.0,<3.0"]
 # Local embeddings (sentence-transformers) — avoids any external embedding API.
 local-embeddings = ["langchain-huggingface>=0.1", "sentence-transformers>=3.0"]
 dev = [

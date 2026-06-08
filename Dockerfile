@@ -10,10 +10,12 @@ LABEL org.opencontainers.image.description="AgentForge API gateway"
 
 WORKDIR /app
 
-# Install dependencies first (cached layer).
+# Install dependencies first (cached layer). Optional extras can be baked in at
+# build time, e.g. --build-arg EXTRAS=langfuse (used by docker-compose.langfuse.yml).
+ARG EXTRAS=""
 COPY pyproject.toml README.md ./
 COPY agentforge ./agentforge
-RUN pip install --upgrade pip && pip install .
+RUN pip install --upgrade pip && pip install ".${EXTRAS:+[${EXTRAS}]}"
 
 # Bundle the reference corpus so the image is self-contained for ingest
 # (compose bind-mounts ./examples over this; k8s/standalone runs rely on it).

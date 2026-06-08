@@ -1,0 +1,59 @@
+# Fully self-hosted observability: adds a Langfuse server (+ its own Postgres)
+# and points the API's tracing at it. Use it as an overlay on the base compose:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.langfuse.yml up --build
+#
+# Then open http://localhost:3000, create an account + project, copy the project
+# keys into your .env as LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY, and restart
+# the api. Traces for every graph node appear in the Langfuse project.
+#
+# `--build` is required the first time so the api image is rebuilt with the
+# langfuse extra (EXTRAS=langfuse).
+
+services:
+  langfuse-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  langfuse:
+    image: langfuse/langfuse:2
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3000
+      # Dev defaults — override in .env for anything beyond a local trial.
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-dev-nextauth-secret-change-me}
+      SALT: ${LANGFUSE_SALT:-dev-salt-change-me}
+      TELEMETRY_ENABLED: "false"
+    ports:
+      - "3000:3000"
+
+  api:
+    build:
+      context: .
+      args:
+        EXTRAS: langfuse
+    environment:
+      OBSERVABILITY_BACKEND: langfuse
+      LANGFUSE_HOST: http://langfuse:3000
+      # Supplied via .env after you create the project in the Langfuse UI.
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    depends_on:
+      langfuse:
+        condition: service_started
+
+volumes:
+  langfuse_pgdata:
