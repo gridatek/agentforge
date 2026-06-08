@@ -27,6 +27,13 @@ export interface ChatResponse {
   pending_action?: PendingAction;
 }
 
+export interface PendingApprovalItem {
+  thread_id: string;
+  question: string;
+  created_at: number;
+  action: PendingAction;
+}
+
 export type StreamEvent =
   | { type: 'thread'; threadId: string }
   | { type: 'token'; text: string }
@@ -54,6 +61,11 @@ export class AgentService {
   /** Raw Prometheus exposition text from the API's /metrics endpoint. */
   metrics(): Observable<string> {
     return this.http.get(`${API_BASE}/metrics`, { responseType: 'text' });
+  }
+
+  /** Runs currently paused awaiting human approval. */
+  approvals(): Observable<PendingApprovalItem[]> {
+    return this.http.get<PendingApprovalItem[]>(`${API_BASE}/approvals`);
   }
 
   /**

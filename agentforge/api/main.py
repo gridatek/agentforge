@@ -3,6 +3,7 @@
 Endpoints:
 - ``GET  /health``        liveness probe.
 - ``GET  /metrics``       Prometheus metrics (HTTP + domain counters).
+- ``GET  /approvals``     list runs paused awaiting human approval.
 - ``POST /chat``          run the agent; may pause for approval.
 - ``POST /chat/stream``   stream the answer token-by-token over SSE.
 - ``POST /approve``       resume a paused run with approve/reject.
@@ -26,11 +27,13 @@ from langgraph.types import Command
 from sse_starlette.sse import EventSourceResponse
 
 from agentforge.agents import get_compiled_graph
+from agentforge.api import approvals
 from agentforge.api.schemas import (
     ApprovalRequest,
     ChatRequest,
     ChatResponse,
     PendingAction,
+    PendingApprovalItem,
 )
 from agentforge.config import get_settings
 from agentforge.observability import get_callbacks, metrics, setup_observability
@@ -135,6 +138,19 @@ def _record_domain_metrics(resp: ChatResponse) -> None:
         metrics.answers_total.labels(grounded).inc()
 
 
+@app.get("/approvals", response_model=list[PendingApprovalItem])
+def approval_queue() -> list[PendingApprovalItem]:
+    return [
+        PendingApprovalItem(
+            thread_id=p.thread_id,
+            question=p.question,
+            created_at=p.created_at,
+            action=p.action,
+        )
+        for p in approvals.list_pending()
+    ]
+
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     metrics.chat_requests_total.inc()
@@ -143,6 +159,8 @@ def chat(req: ChatRequest) -> ChatResponse:
     result = graph.invoke({"question": req.message}, config=_run_config(thread_id))
     resp = _to_response(thread_id, result)
     _record_domain_metrics(resp)
+    if resp.approval_required and resp.pending_action:
+        approvals.register(thread_id, resp.pending_action, req.message)
     return resp
 
 
@@ -153,6 +171,7 @@ def approve(req: ApprovalRequest) -> ChatResponse:
     result = graph.invoke(
         Command(resume=req.decision), config=_run_config(req.thread_id)
     )
+    approvals.resolve(req.thread_id)
     resp = _to_response(req.thread_id, result)
     _record_domain_metrics(resp)
     return resp
@@ -178,9 +197,12 @@ async def chat_stream(req: ChatRequest) -> EventSourceResponse:
         snapshot = graph.get_state(config)
         values = snapshot.values
         if snapshot.next:  # paused at an interrupt
+            action = values.get("proposed_action") or {}
+            if action:
+                approvals.register(thread_id, PendingAction(**action), req.message)
             yield {
                 "event": "approval_required",
-                "data": json.dumps(values.get("proposed_action") or {}),
+                "data": json.dumps(action),
             }
         else:
             yield {

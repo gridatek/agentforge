@@ -109,6 +109,7 @@ export class MetricsComponent implements OnInit, OnDestroy {
     const reject = value(s, 'agentforge_approvals_total', { decision: 'reject' });
     const pii = sum(s, 'agentforge_pii_redactions_total');
     const http = sum(s, 'agentforge_http_requests_total');
+    const pendingApprovals = sum(s, 'agentforge_pending_approvals');
 
     // Nothing has been recorded yet — let the template show the empty state.
     if (chats + answers + approve + reject + pii + http === 0) return [];
@@ -127,6 +128,11 @@ export class MetricsComponent implements OnInit, OnDestroy {
         label: 'Approvals',
         value: `${approve} / ${reject}`,
         hint: 'approved / rejected',
+      },
+      {
+        label: 'Pending approvals',
+        value: `${pendingApprovals}`,
+        hint: 'awaiting sign-off now',
       },
       {
         label: 'PII redactions',

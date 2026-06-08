@@ -13,6 +13,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
             Chat
           </a>
+          <a routerLink="/approvals" routerLinkActive="active">Approvals</a>
           <a routerLink="/ops" routerLinkActive="active">Operations</a>
         </nav>
       </header>

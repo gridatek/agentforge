@@ -7,7 +7,7 @@ the default global registry is correct — no multiprocess collector needed.
 
 from __future__ import annotations
 
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
 # Counter names omit the `_total` suffix on purpose — prometheus_client appends
 # it automatically, so e.g. `agentforge_chat_requests` is exported as
@@ -44,6 +44,10 @@ pii_redactions_total = Counter(
     "agentforge_pii_redactions",
     "PII spans redacted from inbound messages, by type.",
     ["label"],
+)
+pending_approvals = Gauge(
+    "agentforge_pending_approvals",
+    "Sensitive actions currently paused awaiting human approval.",
 )
 
 
