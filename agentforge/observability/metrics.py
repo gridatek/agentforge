@@ -9,9 +9,13 @@ from __future__ import annotations
 
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 
+# Counter names omit the `_total` suffix on purpose — prometheus_client appends
+# it automatically, so e.g. `agentforge_chat_requests` is exported as
+# `agentforge_chat_requests_total`. (Including it here would double it.)
+
 # --- HTTP layer (incremented by middleware) ------------------------------
 http_requests_total = Counter(
-    "agentforge_http_requests_total",
+    "agentforge_http_requests",
     "HTTP requests handled.",
     ["method", "path", "status"],
 )
@@ -23,21 +27,21 @@ http_request_duration_seconds = Histogram(
 
 # --- Domain layer (incremented by the chat/approve handlers) -------------
 chat_requests_total = Counter(
-    "agentforge_chat_requests_total",
+    "agentforge_chat_requests",
     "Chat requests received.",
 )
 answers_total = Counter(
-    "agentforge_answers_total",
+    "agentforge_answers",
     "Answers produced, labelled by whether they were grounded in retrieved context.",
     ["grounded"],
 )
 approvals_total = Counter(
-    "agentforge_approvals_total",
+    "agentforge_approvals",
     "Human approval decisions on sensitive actions.",
     ["decision"],
 )
 pii_redactions_total = Counter(
-    "agentforge_pii_redactions_total",
+    "agentforge_pii_redactions",
     "PII spans redacted from inbound messages, by type.",
     ["label"],
 )
