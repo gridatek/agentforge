@@ -7,7 +7,10 @@ metadata:
     app.kubernetes.io/name: api
     app.kubernetes.io/part-of: agentforge
 spec:
-  replicas: 2
+  # Single replica: HITL approval state lives in the in-process MemorySaver
+  # checkpointer, so a paused thread must resume on the same pod. Switch the
+  # graph to PostgresSaver (see agents/graph.py) before scaling this up.
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: api

@@ -32,3 +32,10 @@ class ChatResponse(BaseModel):
 class ApprovalRequest(BaseModel):
     thread_id: str
     decision: str = Field(description="'approve' or 'reject'")
+
+
+class PendingApprovalItem(BaseModel):
+    thread_id: str
+    question: str
+    created_at: float
+    action: PendingAction

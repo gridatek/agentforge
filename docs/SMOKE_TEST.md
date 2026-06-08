@@ -132,6 +132,8 @@ Open <http://localhost:4200>.
 - [ ] A PII-containing question shows the "PII redacted" notice.
 - [ ] "File a SAR for C-9…" surfaces the **Approval required** card with the
       tool + args; **Approve** executes, **Reject** does not.
+- [ ] That same pending action appears under the **Approvals** tab (question +
+      tool + args); approving/rejecting it there clears it from the queue.
 - [ ] Stop the API (`docker compose stop api`) and send a message — the UI shows
       an error rather than hanging.
 - [ ] Click **Operations** — tiles show live counts (chat requests, grounded %,
