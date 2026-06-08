@@ -1,0 +1,63 @@
+# Deploying AgentForge
+
+`docker compose up` is for local use. This is the path to a real deployment.
+
+## Published images
+
+Every version tag (`vX.Y.Z`) builds and pushes two images to GitHub Container
+Registry via [`.github/workflows/release.yml`](../.github/workflows/release.yml):
+
+| Image | Contents |
+|---|---|
+| `ghcr.io/gridatek/agentforge-api` | FastAPI gateway + agent graph (runs as non-root, port 8000) |
+| `ghcr.io/gridatek/agentforge-console` | Angular console built and served by nginx (port 80) |
+
+Each image is tagged with the full version (`0.1.0`), the minor line (`0.1`), the
+commit SHA, and `latest`. Cut a release with:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+(Or trigger **Release** manually from the Actions tab.) Every PR also *builds*
+both images (no push) so a broken Dockerfile fails CI before merge.
+
+## Running the published images
+
+You still need a Postgres+pgvector instance and an embedding/chat provider.
+
+```bash
+docker run -d --name agentforge-api \
+  -e DATABASE_URL=postgresql+psycopg://USER:PASS@db-host:5432/agentforge \
+  -e CHAT_MODEL=anthropic:claude-opus-4-8 \
+  -e ANTHROPIC_API_KEY=sk-ant-... \
+  -e EMBEDDING_MODEL=openai:text-embedding-3-small \
+  -e EMBEDDING_DIM=1536 \
+  -e OPENAI_API_KEY=sk-... \
+  -p 8000:8000 \
+  ghcr.io/gridatek/agentforge-api:latest
+
+docker run -d --name agentforge-console \
+  -p 4200:80 ghcr.io/gridatek/agentforge-console:latest
+```
+
+The full env contract is in [`.env.example`](../.env.example).
+
+## Ingesting the corpus
+
+Auto-ingest on API startup (`AUTO_INGEST=true`) is meant for the local demo. In
+production, run ingestion as a one-shot job against the same image instead, so the
+API stays stateless and replica-safe:
+
+```bash
+docker run --rm \
+  -e DATABASE_URL=... -e EMBEDDING_MODEL=... -e EMBEDDING_DIM=... \
+  ghcr.io/gridatek/agentforge-api:latest \
+  python -m agentforge.rag.ingest examples/banking-compliance/corpus
+```
+
+## Kubernetes
+
+Manifests (Postgres, API Deployment + Service, console, ingest Job) are the next
+slice of Phase 4 and will live under `deploy/k8s/`.
