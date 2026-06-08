@@ -2,6 +2,7 @@
 
 Endpoints:
 - ``GET  /health``        liveness probe.
+- ``GET  /metrics``       Prometheus metrics (HTTP + domain counters).
 - ``POST /chat``          run the agent; may pause for approval.
 - ``POST /chat/stream``   stream the answer token-by-token over SSE.
 - ``POST /approve``       resume a paused run with approve/reject.
@@ -14,11 +15,12 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from langgraph.types import Command
 from sse_starlette.sse import EventSourceResponse
@@ -31,7 +33,7 @@ from agentforge.api.schemas import (
     PendingAction,
 )
 from agentforge.config import get_settings
-from agentforge.observability import get_callbacks, setup_observability
+from agentforge.observability import get_callbacks, metrics, setup_observability
 
 logger = logging.getLogger("agentforge.api")
 settings = get_settings()
@@ -62,6 +64,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _metrics_middleware(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    # Label by route template (set on the scope during routing), not the raw
+    # path, to keep label cardinality bounded. Unmatched paths are bucketed.
+    route = request.scope.get("route")
+    path = getattr(route, "path", "<unmatched>")
+    if path != "/metrics":
+        metrics.http_request_duration_seconds.labels(request.method, path).observe(
+            time.perf_counter() - start
+        )
+        metrics.http_requests_total.labels(
+            request.method, path, response.status_code
+        ).inc()
+    return response
 
 
 def _run_config(thread_id: str) -> dict[str, Any]:
@@ -100,21 +120,42 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/metrics")
+def prometheus_metrics() -> Response:
+    payload, content_type = metrics.render()
+    return Response(content=payload, media_type=content_type)
+
+
+def _record_domain_metrics(resp: ChatResponse) -> None:
+    """Translate a chat/approve result into domain counters."""
+    for label in resp.pii_found:
+        metrics.pii_redactions_total.labels(label).inc()
+    if not resp.approval_required:
+        grounded = "true" if resp.citations else "false"
+        metrics.answers_total.labels(grounded).inc()
+
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
+    metrics.chat_requests_total.inc()
     thread_id = req.thread_id or str(uuid.uuid4())
     graph = get_compiled_graph()
     result = graph.invoke({"question": req.message}, config=_run_config(thread_id))
-    return _to_response(thread_id, result)
+    resp = _to_response(thread_id, result)
+    _record_domain_metrics(resp)
+    return resp
 
 
 @app.post("/approve", response_model=ChatResponse)
 def approve(req: ApprovalRequest) -> ChatResponse:
+    metrics.approvals_total.labels(req.decision).inc()
     graph = get_compiled_graph()
     result = graph.invoke(
         Command(resume=req.decision), config=_run_config(req.thread_id)
     )
-    return _to_response(req.thread_id, result)
+    resp = _to_response(req.thread_id, result)
+    _record_domain_metrics(resp)
+    return resp
 
 
 @app.post("/chat/stream")

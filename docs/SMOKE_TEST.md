@@ -137,7 +137,20 @@ Open <http://localhost:4200>.
 
 ---
 
-## 8. (Optional) Observability
+## 8. Metrics
+
+```bash
+curl -s localhost:8000/metrics | grep agentforge_
+```
+
+- [ ] After running the steps above, you see `agentforge_chat_requests_total`,
+      `agentforge_answers_total{grounded=...}`, `agentforge_approvals_total{decision=...}`,
+      `agentforge_pii_redactions_total{label="email"}`, and the
+      `agentforge_http_*` series with non-zero values.
+
+---
+
+## 9. (Optional) Tracing
 
 Set a backend in `.env` and restart:
 
