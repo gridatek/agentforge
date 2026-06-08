@@ -9,16 +9,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from agentforge.config import get_settings
+from agentforge.config import get_settings, libpq_url
 
-
-def _conninfo(database_url: str) -> str:
-    """Turn a SQLAlchemy URL into a libpq conninfo string.
-
-    The app uses ``postgresql+psycopg://…`` for langchain/SQLAlchemy; psycopg's
-    pool wants a plain ``postgresql://…``.
-    """
-    return database_url.replace("postgresql+psycopg://", "postgresql://", 1)
+# Kept for back-compat with existing imports/tests; delegates to the shared helper.
+_conninfo = libpq_url
 
 
 @lru_cache

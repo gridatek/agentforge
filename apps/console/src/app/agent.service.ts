@@ -34,6 +34,12 @@ export interface PendingApprovalItem {
   action: PendingAction;
 }
 
+export interface DocumentSummaryItem {
+  source: string;
+  title: string;
+  chunks: number;
+}
+
 export type StreamEvent =
   | { type: 'thread'; threadId: string }
   | { type: 'token'; text: string }
@@ -66,6 +72,11 @@ export class AgentService {
   /** Runs currently paused awaiting human approval. */
   approvals(): Observable<PendingApprovalItem[]> {
     return this.http.get<PendingApprovalItem[]>(`${API_BASE}/approvals`);
+  }
+
+  /** Source documents ingested into the vector store. */
+  documents(): Observable<DocumentSummaryItem[]> {
+    return this.http.get<DocumentSummaryItem[]>(`${API_BASE}/documents`);
   }
 
   /**

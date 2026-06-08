@@ -91,3 +91,12 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Cached singleton — import this everywhere instead of constructing Settings()."""
     return Settings()
+
+
+def libpq_url(database_url: str) -> str:
+    """SQLAlchemy URL -> libpq conninfo.
+
+    The app uses ``postgresql+psycopg://…`` for langchain/SQLAlchemy; psycopg and
+    its pool want a plain ``postgresql://…``. Only the scheme is rewritten.
+    """
+    return database_url.replace("postgresql+psycopg://", "postgresql://", 1)
