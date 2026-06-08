@@ -134,6 +134,8 @@ Open <http://localhost:4200>.
       tool + args; **Approve** executes, **Reject** does not.
 - [ ] Stop the API (`docker compose stop api`) and send a message — the UI shows
       an error rather than hanging.
+- [ ] Click **Operations** — tiles show live counts (chat requests, grounded %,
+      approvals, PII redactions, HTTP requests) that update as you use Chat.
 
 ---
 

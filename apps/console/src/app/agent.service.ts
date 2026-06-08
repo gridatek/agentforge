@@ -51,6 +51,11 @@ export class AgentService {
     });
   }
 
+  /** Raw Prometheus exposition text from the API's /metrics endpoint. */
+  metrics(): Observable<string> {
+    return this.http.get(`${API_BASE}/metrics`, { responseType: 'text' });
+  }
+
   /**
    * Stream a chat response over SSE. Uses fetch (not EventSource) because the
    * endpoint is a POST. Emits typed events; unsubscribing aborts the request.
