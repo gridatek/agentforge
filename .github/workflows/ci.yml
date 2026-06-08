@@ -28,6 +28,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: docker compose config
         run: docker compose config --quiet
+      - name: docker compose config (+ langfuse overlay)
+        run: docker compose -f docker-compose.yml -f docker-compose.langfuse.yml config --quiet
 
   # Validate the Kubernetes manifests render and pass schema validation.
   k8s-validate:
