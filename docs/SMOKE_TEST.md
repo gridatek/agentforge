@@ -142,6 +142,8 @@ Open <http://localhost:4200>.
       tool + args); approving/rejecting it there clears it from the queue.
 - [ ] Stop the API (`docker compose stop api`) and send a message — the UI shows
       an error rather than hanging.
+- [ ] Click **Knowledge** — a table lists the ingested sources (AML/KYC policy,
+      product sheet) with their chunk counts.
 - [ ] Click **Operations** — tiles show live counts (chat requests, grounded %,
       approvals, PII redactions, HTTP requests) that update as you use Chat.
 

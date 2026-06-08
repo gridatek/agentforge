@@ -39,3 +39,9 @@ class PendingApprovalItem(BaseModel):
     question: str
     created_at: float
     action: PendingAction
+
+
+class DocumentSummaryItem(BaseModel):
+    source: str
+    title: str
+    chunks: int
