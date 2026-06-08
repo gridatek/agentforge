@@ -15,7 +15,7 @@ The LangChain ecosystem is full of libraries and notebooks, but short on **opini
 
 AgentForge fills that gap. It is not "a chatbot demo." It is a forkable foundation for teams who need agentic AI on their own infrastructure, with the auditability, guardrails, and predictable failure behavior that regulated industries (banking, insurance, healthcare) actually require.
 
-A **banking compliance assistant** ships as the reference example — RAG over policies, AML/KYC rules and product sheets, with human-in-the-loop approval before any sensitive action — but the platform itself is domain-agnostic.
+A **banking compliance assistant** ships as the reference example — RAG over policies, AML/KYC rules and product sheets, with human-in-the-loop approval before any sensitive action — but the platform itself is domain-agnostic. A second **insurance-support** example ([`examples/`](examples/)) runs the same code over a different corpus to prove it.
 
 ## What's in the box
 
@@ -113,8 +113,7 @@ agentforge/
 │   └── cli.py               # agentforge ingest | ask | serve
 ├── apps/
 │   └── console/             # Angular admin UI
-├── examples/
-│   └── banking-compliance/  # reference example + sample corpus
+├── examples/                # reference examples (banking-compliance, insurance-support)
 ├── evals/                   # eval dataset + CI gate
 ├── tests/                   # unit tests (no API keys needed)
 ├── db/init.sql              # enables pgvector

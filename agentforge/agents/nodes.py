@@ -19,10 +19,13 @@ from langgraph.types import interrupt
 
 from agentforge.agents.state import AgentState
 from agentforge.agents.tools import TOOLS, execute_tool
+from agentforge.config import get_settings
 from agentforge.guardrails import redact_pii, requires_approval
 from agentforge.llm import get_chat_model
 from agentforge.rag import retrieve
 
+# Default persona (banking-compliance reference example). Override per-domain via
+# the SYSTEM_PROMPT env / setting — see examples/.
 SYSTEM_PROMPT = """You are AgentForge, a banking-compliance assistant.
 
 Rules:
@@ -69,7 +72,7 @@ def generate_node(state: AgentState) -> dict:
         "unless the user is requesting a sensitive action."
     )
     messages = [
-        SystemMessage(SYSTEM_PROMPT),
+        SystemMessage(get_settings().system_prompt or SYSTEM_PROMPT),
         SystemMessage(grounding_note),
         HumanMessage(state["redacted_question"]),
     ]

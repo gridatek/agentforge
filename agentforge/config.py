@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     chunk_size: int = Field(default=900)
     chunk_overlap: int = Field(default=150)
 
+    # --- Agent -----------------------------------------------------------
+    # Override the agent's system prompt to retarget it at another domain
+    # (see examples/). None keeps the built-in banking-compliance default.
+    system_prompt: str | None = Field(default=None)
+
     # --- Guardrails ------------------------------------------------------
     redact_pii: bool = Field(default=True)
     # Tools that always require human approval before execution.

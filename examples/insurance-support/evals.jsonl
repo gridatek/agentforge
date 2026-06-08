@@ -1,0 +1,9 @@
+{"id": "collision-deductible", "question": "What is the collision deductible?", "expect_grounded": true, "expected_keywords": ["500"]}
+{"id": "comprehensive-deductible", "question": "How much is the comprehensive deductible?", "expect_grounded": true, "expected_keywords": ["250"]}
+{"id": "rental-reimbursement", "question": "How much rental reimbursement does the policy provide?", "expect_grounded": true, "expected_keywords": ["40", "30"]}
+{"id": "bodily-injury-limits", "question": "What are the bodily injury liability limits?", "expect_grounded": true, "expected_keywords": ["100,000", "300,000"]}
+{"id": "report-window", "question": "How long do I have to report a claim?", "expect_grounded": true, "expected_keywords": ["30 days"]}
+{"id": "total-loss-payout", "question": "How is a total loss paid out?", "expect_grounded": true, "expected_keywords": ["actual cash value"]}
+{"id": "fraud-escalation", "question": "What should happen if a claim shows signs of fraud?", "expect_grounded": true, "expected_keywords": ["escalate"]}
+{"id": "out-of-scope-life", "question": "Does this policy cover life insurance?", "expect_refusal": true}
+{"id": "out-of-scope-capital", "question": "What is the capital of France?", "expect_refusal": true}

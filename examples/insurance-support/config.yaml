@@ -1,0 +1,32 @@
+# Reference example: auto-insurance support assistant.
+# Shows the same AgentForge platform serving a different domain — only the
+# corpus, system prompt, and config change; no code changes. The platform reads
+# its settings from the environment (.env); this file documents the intended
+# configuration.
+
+name: insurance-support
+description: >
+  RAG over an auto-insurance policy, claims process, and fraud guidance, with
+  human-in-the-loop escalation of claims that show fraud red flags.
+
+corpus: ./corpus
+
+# Sensitive tools that always require approval. This example reuses the generic
+# escalate_case tool (escalate a claim to a human adjuster). Domain-specific
+# tools would be added in agentforge/agents/tools.py.
+sensitive_tools:
+  - escalate_case
+
+suggested_env:
+  COLLECTION_NAME: insurance_support
+  AUTO_INGEST_CORPUS: examples/insurance-support/corpus
+  EMBEDDING_MODEL: ollama:nomic-embed-text
+  EMBEDDING_DIM: 768
+  MIN_RELEVANCE: 0.2
+  SYSTEM_PROMPT: >
+    You are AgentForge, an auto-insurance support assistant. Answer ONLY from the
+    provided context and cite sources inline as [1], [2], …. If the context does
+    not contain the answer, say you don't know and that the question is out of
+    scope; never invent coverage, limits, or figures. If a claim shows signs of
+    fraud, do not approve or deny it — escalate to a human adjuster using the
+    appropriate tool.
