@@ -40,6 +40,28 @@ jobs:
       - run: npm install
       - run: npm run build
 
+  # Build both production images (no push) so Dockerfile regressions fail the PR.
+  images-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: api
+            context: .
+          - name: console
+            context: apps/console
+    steps:
+      - uses: actions/checkout@v5
+      # Buildx with the docker-container driver — required for GHA cache export.
+      - uses: docker/setup-buildx-action@v3
+      - name: Build ${{ matrix.name }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   # Eval gate — blocks the deploy if retrieval/faithfulness regresses.
   # Runs only when an ANTHROPIC_API_KEY secret is configured (skipped on forks).
   eval-gate:

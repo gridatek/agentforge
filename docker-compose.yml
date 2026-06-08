@@ -84,8 +84,9 @@ services:
 
   console:
     build: ./apps/console
+    # Production build served by nginx on :80 (mapped to the familiar :4200).
     ports:
-      - "4200:4200"
+      - "4200:80"
     depends_on:
       - api
 

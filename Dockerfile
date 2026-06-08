@@ -5,6 +5,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
+LABEL org.opencontainers.image.source="https://github.com/gridatek/agentforge"
+LABEL org.opencontainers.image.description="AgentForge API gateway"
+
 WORKDIR /app
 
 # Install dependencies first (cached layer).
@@ -12,7 +15,13 @@ COPY pyproject.toml README.md ./
 COPY agentforge ./agentforge
 RUN pip install --upgrade pip && pip install .
 
+# Run as an unprivileged user (own /app so volume mounts/ingest still work).
+RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8000
 
-# Default command runs the gateway; override for ingest/evals.
+# Default command runs the gateway; override for ingest/evals. Horizontal
+# scaling is handled by orchestrator replicas, so the process stays single-worker
+# (avoids each worker racing on startup auto-ingest).
 CMD ["uvicorn", "agentforge.api:app", "--host", "0.0.0.0", "--port", "8000"]
