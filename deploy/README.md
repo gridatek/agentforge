@@ -12,16 +12,27 @@ Registry via [`.github/workflows/release.yml`](../.github/workflows/release.yml)
 | `ghcr.io/gridatek/agentforge-api` | FastAPI gateway + agent graph (runs as non-root, port 8000) |
 | `ghcr.io/gridatek/agentforge-console` | Angular console built and served by nginx (port 80) |
 
-Each image is tagged with the full version (`0.1.0`), the minor line (`0.1`), the
+Each image is tagged with the full version (`0.2.0`), the minor line (`0.2`), the
 commit SHA, and `latest`. Cut a release with:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 (Or trigger **Release** manually from the Actions tab.) Every PR also *builds*
 both images (no push) so a broken Dockerfile fails CI before merge.
+
+After the release run finishes, verify the images are pullable:
+
+```bash
+docker pull ghcr.io/gridatek/agentforge-api:0.2.0
+docker pull ghcr.io/gridatek/agentforge-console:0.2.0
+```
+
+GHCR packages are **private by default** — if the pull asks for auth, make each
+package Public (org → Packages → the package → *Package settings* → Change
+visibility), or `docker login ghcr.io` first.
 
 ## Running the published images
 
