@@ -15,3 +15,6 @@ Thumbs.db
 
 # Real k8s secret (only the .example template is committed)
 deploy/k8s/secret.yaml
+
+# Generated eval report (served by the API; produced by run_evals.py --out)
+evals/results.json

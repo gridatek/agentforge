@@ -40,6 +40,22 @@ export interface DocumentSummaryItem {
   chunks: number;
 }
 
+export interface EvalCase {
+  id: string;
+  question: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface EvalReport {
+  generated_at: string;
+  threshold: number;
+  passed: number;
+  total: number;
+  pass_rate: number;
+  cases: EvalCase[];
+}
+
 export type StreamEvent =
   | { type: 'thread'; threadId: string }
   | { type: 'token'; text: string }
@@ -77,6 +93,11 @@ export class AgentService {
   /** Source documents ingested into the vector store. */
   documents(): Observable<DocumentSummaryItem[]> {
     return this.http.get<DocumentSummaryItem[]>(`${API_BASE}/documents`);
+  }
+
+  /** Latest eval report, or null if evals haven't been run in this environment. */
+  evals(): Observable<EvalReport | null> {
+    return this.http.get<EvalReport | null>(`${API_BASE}/evals`);
   }
 
   /**

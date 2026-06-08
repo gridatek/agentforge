@@ -82,6 +82,9 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./examples:/app/examples:ro
+      # Writable so `docker compose exec api python evals/run_evals.py --out
+      # evals/results.json` can produce a report the Evals view then serves.
+      - ./evals:/app/evals
 
   console:
     build: ./apps/console

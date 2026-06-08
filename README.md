@@ -25,7 +25,7 @@ A **banking compliance assistant** ships as the reference example — RAG over p
 - **Guardrails** — PII redaction, tool scoping, and policy enforcement via LangChain middleware.
 - **Pluggable observability** — LangSmith by default; Langfuse adapter for a fully self-hosted setup; Prometheus `/metrics`.
 - **Evals as a CI gate** — regression tests on retrieval quality and answer faithfulness that block bad deploys.
-- **Admin console** — Angular UI for chat, trace inspection, eval scores, and the approval queue.
+- **Admin console** — Angular UI: chat, the approval queue, knowledge base, eval scores, and live ops metrics.
 - **One-command local run** — `docker compose up` to a working agent + console.
 
 ## Architecture (high level)
