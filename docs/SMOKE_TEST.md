@@ -108,6 +108,12 @@ curl -s localhost:8000/approve -H 'content-type: application/json' \
 
 - [ ] `answer` confirms the action ran (contains `SAR drafted`).
 
+Durability (optional): pause on a SAR, run `docker compose restart api`, then
+`/approve` that `thread_id`.
+
+- [ ] The resume still works after the restart — checkpoints persist in Postgres
+      (`CHECKPOINT_BACKEND=postgres`).
+
 ---
 
 ## 6. Streaming (SSE)
