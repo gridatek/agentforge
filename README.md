@@ -83,6 +83,9 @@ First boot pulls ~2.5 GB of local models. To use a cloud provider instead, drop
 a `.env` (see `.env.example`) — e.g. `CHAT_MODEL=anthropic:claude-opus-4-8` +
 `ANTHROPIC_API_KEY=…` — and those values override the local defaults.
 
+Once it's up, walk through [`docs/SMOKE_TEST.md`](docs/SMOKE_TEST.md) to verify
+the end-to-end flow (grounded answers, refusals, streaming, HITL approval).
+
 ## Repo structure
 
 The scaffold for every phase is in place — a runnable skeleton you extend.
