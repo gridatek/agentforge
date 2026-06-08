@@ -45,6 +45,10 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://agentforge:agentforge@localhost:5432/agentforge"
     )
     collection_name: str = Field(default="agentforge_documents")
+    # Graph checkpointer backend: "memory" (in-process, dev/tests) or "postgres"
+    # (durable — HITL state survives restarts and is shared across replicas).
+    # docker-compose / k8s set this to "postgres".
+    checkpoint_backend: str = Field(default="memory")
 
     # --- RAG retrieval ---------------------------------------------------
     retrieval_k: int = Field(default=4)

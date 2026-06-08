@@ -71,6 +71,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OBSERVABILITY_BACKEND: ${OBSERVABILITY_BACKEND:-none}
+      CHECKPOINT_BACKEND: postgres
       AUTO_INGEST: "true"
     ports:
       - "8000:8000"

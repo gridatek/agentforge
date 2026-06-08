@@ -17,6 +17,9 @@ dependencies = [
   "langchain>=1.0,<2.0",
   "langchain-text-splitters>=0.3",
   "langgraph>=1.0,<2.0",
+  # Durable checkpointer (HITL + resume survive restarts / work across replicas).
+  "langgraph-checkpoint-postgres>=2.0",
+  "psycopg-pool>=3.2",
   "langchain-anthropic>=0.3",
   "langchain-openai>=0.2",
   "langchain-ollama>=0.2",

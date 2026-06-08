@@ -18,5 +18,7 @@ data:
   MIN_RELEVANCE: "0.2"
   RETRIEVAL_K: "4"
   OBSERVABILITY_BACKEND: "none"
+  # Durable HITL/resume state in Postgres (survives restarts, shared across pods).
+  CHECKPOINT_BACKEND: "postgres"
   # Production ingests via a one-shot Job, not at API startup.
   AUTO_INGEST: "false"

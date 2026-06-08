@@ -4,8 +4,9 @@ The compiled graph is checkpointed, which gives us two things at once:
 durable execution (a crash mid-run resumes from the last node) and the pause/
 resume mechanics that human-in-the-loop approval relies on.
 
-For production, swap ``MemorySaver`` for ``langgraph.checkpoint.postgres.PostgresSaver``
-so checkpoints survive process restarts — same interface, persistent store.
+The backend is configurable: ``MemorySaver`` in-process by default (dev/tests),
+or a durable ``PostgresSaver`` when ``CHECKPOINT_BACKEND=postgres`` (see
+``checkpoint.py``) so checkpoints survive restarts and work across replicas.
 """
 
 from __future__ import annotations
@@ -50,5 +51,17 @@ def build_graph() -> StateGraph:
 
 @lru_cache
 def get_compiled_graph():
-    """Compiled, checkpointed graph (cached as a process-wide singleton)."""
-    return build_graph().compile(checkpointer=MemorySaver())
+    """Compiled, checkpointed graph (cached as a process-wide singleton).
+
+    Uses a durable Postgres checkpointer when ``CHECKPOINT_BACKEND=postgres``
+    (set by docker-compose / k8s), otherwise the in-process ``MemorySaver``.
+    """
+    from agentforge.config import get_settings
+
+    if get_settings().checkpoint_backend == "postgres":
+        from agentforge.agents.checkpoint import get_postgres_checkpointer
+
+        checkpointer = get_postgres_checkpointer()
+    else:
+        checkpointer = MemorySaver()
+    return build_graph().compile(checkpointer=checkpointer)
