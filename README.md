@@ -23,7 +23,7 @@ A **banking compliance assistant** ships as the reference example — RAG over p
 - **RAG pipeline** — ingestion, chunking, embeddings, retrieval with citations and grounded refusals.
 - **Agentic orchestration** — stateful LangGraph agents with durable execution and human-in-the-loop approval nodes.
 - **Guardrails** — PII redaction, tool scoping, and policy enforcement via LangChain middleware.
-- **Pluggable observability** — LangSmith by default; Langfuse adapter for a fully self-hosted setup.
+- **Pluggable observability** — LangSmith by default; Langfuse adapter for a fully self-hosted setup; Prometheus `/metrics`.
 - **Evals as a CI gate** — regression tests on retrieval quality and answer faithfulness that block bad deploys.
 - **Admin console** — Angular UI for chat, trace inspection, eval scores, and the approval queue.
 - **One-command local run** — `docker compose up` to a working agent + console.

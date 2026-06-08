@@ -16,6 +16,10 @@ spec:
       labels:
         app.kubernetes.io/name: api
         app.kubernetes.io/part-of: agentforge
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
       securityContext:
         runAsNonRoot: true

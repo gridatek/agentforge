@@ -91,3 +91,14 @@ the console needs to be exposed and there's no build-time API host to set. If th
 API runs in a different namespace, point the proxy at it by setting
 `API_UPSTREAM` (e.g. `api.other-ns.svc.cluster.local:8000`) on the console
 container.
+
+## Monitoring
+
+The API exposes Prometheus metrics at `GET /metrics` — HTTP request rate/latency
+plus domain counters (`agentforge_chat_requests_total`, `agentforge_answers_total`
+by `grounded`, `agentforge_approvals_total` by `decision`,
+`agentforge_pii_redactions_total` by `label`). The API pods carry
+`prometheus.io/scrape` annotations, so a Prometheus configured for
+annotation-based discovery picks them up automatically; otherwise scrape the `api`
+Service on port 8000. Alert on the grounded-answer ratio dropping or approval
+rejections spiking.
