@@ -1,0 +1,100 @@
+# Postgres + pgvector. A StatefulSet for stable storage; for production you may
+# prefer a managed Postgres (RDS/Cloud SQL) and delete this file, pointing
+# DATABASE_URL at it instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init
+  namespace: agentforge
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: agentforge
+data:
+  init.sql: |
+    -- Enable pgvector for the agentforge database.
+    CREATE EXTENSION IF NOT EXISTS vector;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: agentforge
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: agentforge
+spec:
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  namespace: agentforge
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: agentforge
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: agentforge
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: agentforge-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: agentforge-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: agentforge
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "agentforge"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: init
+          configMap:
+            name: db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi

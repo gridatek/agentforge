@@ -29,6 +29,27 @@ jobs:
       - name: docker compose config
         run: docker compose config --quiet
 
+  # Validate the Kubernetes manifests render and pass schema validation.
+  k8s-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install kubeconform
+        run: |
+          curl -sSLo kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/
+      - name: Render kustomize + validate schemas
+        run: |
+          kubectl kustomize deploy/k8s > /tmp/rendered.yaml
+          kubeconform -strict -summary \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /tmp/rendered.yaml
+          # The one-shot Job + Secret template aren't in the kustomization.
+          kubeconform -strict -summary deploy/k8s/ingest-job.yaml deploy/k8s/secret.example.yaml
+
   # Build the Angular console so TypeScript/template errors fail the build.
   console-build:
     runs-on: ubuntu-latest

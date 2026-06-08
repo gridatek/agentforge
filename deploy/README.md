@@ -59,5 +59,32 @@ docker run --rm \
 
 ## Kubernetes
 
-Manifests (Postgres, API Deployment + Service, console, ingest Job) are the next
-slice of Phase 4 and will live under `deploy/k8s/`.
+Manifests live under [`k8s/`](k8s/): a `Namespace`, Postgres `StatefulSet`
+(swap for managed Postgres in real prod), the API `Deployment` + `Service` (2
+replicas, `/health` probes, non-root), the console `Deployment` + `Service`, a
+one-shot ingest `Job`, and a template `Ingress`. They're tied together with
+Kustomize and schema-validated in CI (`k8s-validate` via kubeconform).
+
+```bash
+# 1. Create the namespace + your secret (never commit the filled-in copy).
+kubectl apply -f deploy/k8s/namespace.yaml
+cp deploy/k8s/secret.example.yaml deploy/k8s/secret.yaml   # gitignored
+$EDITOR deploy/k8s/secret.yaml                             # set password + API keys
+kubectl apply -f deploy/k8s/secret.yaml
+
+# 2. Deploy the stack (pin a version in kustomization.yaml instead of :latest).
+kubectl apply -k deploy/k8s
+
+# 3. Ingest the corpus once the DB is ready.
+kubectl -n agentforge rollout status statefulset/db
+kubectl apply -f deploy/k8s/ingest-job.yaml
+kubectl -n agentforge wait --for=condition=complete job/ingest --timeout=300s
+```
+
+Edit `ingress.yaml` hosts (or delete it and expose the Services your own way).
+
+**Caveat — console API base:** the console calls the API from the browser using
+the build-time `apiBase` in
+`apps/console/src/environments/environment.ts` (default `http://localhost:8000`).
+For a real cluster, rebuild the console image with that pointing at your API host
+before relying on the ingress. Same-origin proxying is a planned follow-up.
