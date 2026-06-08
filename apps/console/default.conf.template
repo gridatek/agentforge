@@ -1,0 +1,44 @@
+# nginx config for the console. The official nginx image runs envsubst over
+# files in /etc/nginx/templates at startup, substituting ONLY declared env vars
+# (so ${API_UPSTREAM} is replaced while nginx's own $uri/$host are left intact).
+# API_UPSTREAM defaults to the in-cluster/compose service "api:8000".
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Same-origin API proxy. The trailing slash on proxy_pass strips the /api
+    # prefix, so /api/chat -> http://<upstream>/chat.
+    location /api/ {
+        proxy_pass http://${API_UPSTREAM}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Stream Server-Sent Events through without buffering or early timeout.
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+
+    # Long-cache fingerprinted assets; never cache the entry document.
+    location ~* \.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+}

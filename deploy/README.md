@@ -28,7 +28,10 @@ both images (no push) so a broken Dockerfile fails CI before merge.
 You still need a Postgres+pgvector instance and an embedding/chat provider.
 
 ```bash
-docker run -d --name agentforge-api \
+# Shared network so the console can reach the API by name.
+docker network create agentforge-net
+
+docker run -d --name api --network agentforge-net \
   -e DATABASE_URL=postgresql+psycopg://USER:PASS@db-host:5432/agentforge \
   -e CHAT_MODEL=anthropic:claude-opus-4-8 \
   -e ANTHROPIC_API_KEY=sk-ant-... \
@@ -38,7 +41,8 @@ docker run -d --name agentforge-api \
   -p 8000:8000 \
   ghcr.io/gridatek/agentforge-api:latest
 
-docker run -d --name agentforge-console \
+# The console proxies /api to API_UPSTREAM (defaults to api:8000).
+docker run -d --name console --network agentforge-net \
   -p 4200:80 ghcr.io/gridatek/agentforge-console:latest
 ```
 
@@ -81,10 +85,9 @@ kubectl apply -f deploy/k8s/ingest-job.yaml
 kubectl -n agentforge wait --for=condition=complete job/ingest --timeout=300s
 ```
 
-Edit `ingress.yaml` hosts (or delete it and expose the Services your own way).
-
-**Caveat — console API base:** the console calls the API from the browser using
-the build-time `apiBase` in
-`apps/console/src/environments/environment.ts` (default `http://localhost:8000`).
-For a real cluster, rebuild the console image with that pointing at your API host
-before relying on the ingress. Same-origin proxying is a planned follow-up.
+Edit `ingress.yaml` host (or delete it and expose the console Service your own
+way). The console reverse-proxies `/api` to the API Service same-origin, so only
+the console needs to be exposed and there's no build-time API host to set. If the
+API runs in a different namespace, point the proxy at it by setting
+`API_UPSTREAM` (e.g. `api.other-ns.svc.cluster.local:8000`) on the console
+container.

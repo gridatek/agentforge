@@ -17,8 +17,11 @@ RUN npm run build
 FROM nginx:1.27-alpine AS runtime
 LABEL org.opencontainers.image.source="https://github.com/gridatek/agentforge"
 LABEL org.opencontainers.image.description="AgentForge admin console"
+# Upstream the /api proxy points at; override for cross-namespace / external API.
+ENV API_UPSTREAM=api:8000
 # The `application` builder emits browser assets under dist/<project>/browser.
 COPY --from=build /app/dist/console/browser /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Rendered by the nginx image's envsubst entrypoint into conf.d at startup.
+COPY default.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
