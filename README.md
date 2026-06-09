@@ -140,7 +140,7 @@ Ingestion → chunking → embeddings → pgvector → grounded answers with cit
 *Skills: RAG, Prompt Engineering, LLM.*
 
 ### Phase 2 — Agentic orchestration (LangGraph)
-Single stateful graph: planner → retrieval/tool nodes → **human-in-the-loop approval** before sensitive actions. Durable execution that survives restarts. Guardrails middleware (PII redaction, tool scoping).
+Stateful graph with a **supervisor** that routes each request to a knowledge or action specialist → **human-in-the-loop approval** before sensitive actions. Durable execution that survives restarts. Guardrails middleware (PII redaction, tool scoping).
 *Skills: LangGraph, LangChain, agents. **The core of the profile — invest the most time here.***
 
 ### Phase 3 — Observability & Evals
@@ -161,11 +161,11 @@ Chat UI + admin views: live traces, eval scores, approval queue. The full-stack 
 *Skills: full-stack differentiator.*
 
 ### Beyond v1.0 — community milestones
-- Langfuse adapter (fully self-hosted observability)
-- Multi-agent / supervisor graphs
-- Qdrant + alternative vector-store adapters
+- ✅ Langfuse adapter (fully self-hosted observability)
+- ✅ Multi-agent / supervisor graphs
+- ✅ Qdrant + alternative vector-store adapters
+- ✅ Additional reference examples (insurance, support)
 - Multi-tenancy
-- Additional reference examples (insurance, support)
 
 ---
 

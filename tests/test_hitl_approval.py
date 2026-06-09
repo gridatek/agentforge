@@ -6,7 +6,7 @@ import agentforge.agents.nodes as nodes
 from langchain_core.messages import AIMessage
 from langgraph.types import Command
 
-from tests.fakes import FakeChatModel, grounded_retrieval
+from tests.fakes import FakeChatModel, route_model
 
 _SAR_CALL = {
     "name": "file_sar",
@@ -17,7 +17,7 @@ _SAR_CALL = {
 
 
 def _setup(monkeypatch):
-    monkeypatch.setattr(nodes, "retrieve", lambda q: grounded_retrieval())
+    monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("action"))
     monkeypatch.setattr(
         nodes,
         "get_chat_model",

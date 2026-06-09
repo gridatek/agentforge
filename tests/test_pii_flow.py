@@ -5,7 +5,7 @@ from __future__ import annotations
 import agentforge.agents.nodes as nodes
 from langchain_core.messages import AIMessage
 
-from tests.fakes import FakeChatModel, empty_retrieval
+from tests.fakes import FakeChatModel, empty_retrieval, route_model
 
 
 def test_pii_redacted_before_retrieval(fresh_graph, monkeypatch):
@@ -15,6 +15,7 @@ def test_pii_redacted_before_retrieval(fresh_graph, monkeypatch):
         seen["query"] = query
         return empty_retrieval()
 
+    monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("knowledge"))
     monkeypatch.setattr(nodes, "retrieve", spy_retrieve)
     monkeypatch.setattr(
         nodes, "get_chat_model", lambda: FakeChatModel(responses=[AIMessage("ok")])

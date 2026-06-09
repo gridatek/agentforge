@@ -34,6 +34,15 @@ class FakeChatModel(BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
 
+def route_model(route: str) -> FakeChatModel:
+    """A fake fast-model standing in for the supervisor's classifier.
+
+    Returns ``route`` ("knowledge" or "action") as the one-word reply the
+    supervisor parses, so tests can pin which specialist a request reaches.
+    """
+    return FakeChatModel(responses=[AIMessage(content=route)])
+
+
 def grounded_retrieval(text: str = "Enhanced due diligence applies at $10,000.") -> RetrievalResult:
     """A retrieval result with one relevant chunk (drives a grounded answer)."""
     return RetrievalResult(

@@ -17,32 +17,49 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from agentforge.agents.nodes import (
+    act_agent_node,
     act_node,
+    answer_node,
     approval_node,
-    generate_node,
     guardrails_node,
     retrieve_node,
+    supervisor_node,
 )
 from agentforge.agents.state import AgentState
 
 
-def _route_after_generate(state: AgentState) -> str:
+def _route_from_supervisor(state: AgentState) -> str:
+    """Dispatch to the specialist the supervisor selected (default: knowledge)."""
+    return "action" if state.get("route") == "action" else "knowledge"
+
+
+def _route_after_action(state: AgentState) -> str:
     return "approval" if state.get("proposed_action") else "end"
 
 
 def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
     graph.add_node("guardrails", guardrails_node)
+    graph.add_node("supervisor", supervisor_node)
     graph.add_node("retrieve", retrieve_node)
-    graph.add_node("generate", generate_node)
+    graph.add_node("answer", answer_node)
+    graph.add_node("act_agent", act_agent_node)
     graph.add_node("approval", approval_node)
     graph.add_node("act", act_node)
 
     graph.add_edge(START, "guardrails")
-    graph.add_edge("guardrails", "retrieve")
-    graph.add_edge("retrieve", "generate")
+    graph.add_edge("guardrails", "supervisor")
     graph.add_conditional_edges(
-        "generate", _route_after_generate, {"approval": "approval", "end": END}
+        "supervisor",
+        _route_from_supervisor,
+        {"knowledge": "retrieve", "action": "act_agent"},
+    )
+    # Knowledge path: ground, answer, done.
+    graph.add_edge("retrieve", "answer")
+    graph.add_edge("answer", END)
+    # Action path: propose a tool, gate sensitive ones through human approval.
+    graph.add_conditional_edges(
+        "act_agent", _route_after_action, {"approval": "approval", "end": END}
     )
     graph.add_edge("approval", "act")
     graph.add_edge("act", END)

@@ -20,6 +20,10 @@ class AgentState(TypedDict, total=False):
     redacted_question: str
     pii_found: list[str]
 
+    # Supervisor routing decision: "knowledge" (answer from docs) | "action"
+    # (perform a sensitive operation). Set by ``supervisor_node``.
+    route: str
+
     # Retrieval output.
     context: str
     citations: list[dict[str, Any]]

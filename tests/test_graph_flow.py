@@ -5,7 +5,7 @@ from __future__ import annotations
 import agentforge.agents.nodes as nodes
 from langchain_core.messages import AIMessage
 
-from tests.fakes import FakeChatModel, empty_retrieval, grounded_retrieval
+from tests.fakes import FakeChatModel, empty_retrieval, grounded_retrieval, route_model
 
 
 def _config(thread_id: str) -> dict:
@@ -13,6 +13,7 @@ def _config(thread_id: str) -> dict:
 
 
 def test_grounded_answer_includes_citations(fresh_graph, monkeypatch):
+    monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("knowledge"))
     monkeypatch.setattr(nodes, "retrieve", lambda q: grounded_retrieval())
     monkeypatch.setattr(
         nodes,
@@ -31,6 +32,7 @@ def test_grounded_answer_includes_citations(fresh_graph, monkeypatch):
 
 
 def test_out_of_scope_question_is_refused(fresh_graph, monkeypatch):
+    monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("knowledge"))
     monkeypatch.setattr(nodes, "retrieve", lambda q: empty_retrieval())
     monkeypatch.setattr(
         nodes,
@@ -50,8 +52,8 @@ def test_out_of_scope_question_is_refused(fresh_graph, monkeypatch):
 
 def test_non_sensitive_tool_executes_without_approval(fresh_graph, monkeypatch):
     # Treat everything as non-sensitive for this test: the auto-exec path runs.
+    monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("action"))
     monkeypatch.setattr(nodes, "requires_approval", lambda name: False)
-    monkeypatch.setattr(nodes, "retrieve", lambda q: grounded_retrieval())
     tool_call = {
         "name": "escalate_case",
         "args": {"customer_ref": "C-1", "reason": "unusual activity"},
