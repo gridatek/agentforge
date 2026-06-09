@@ -205,13 +205,19 @@ async def chat_stream(req: ChatRequest) -> EventSourceResponse:
     graph = get_compiled_graph()
     config = _run_config(thread_id)
 
+    # Only stream tokens from the answer-producing specialists — never the
+    # supervisor, whose model emits a one-word routing label, not user output.
+    _streaming_nodes = {"answer", "act_agent"}
+
     async def event_generator():
         yield {"event": "thread", "data": thread_id}
-        # Stream LLM tokens as they are produced by the generate node.
+        # Stream LLM tokens as the answer/act_agent specialists produce them.
         async for event in graph.astream_events(
             {"question": req.message}, config=config, version="v2"
         ):
             if event["event"] == "on_chat_model_stream":
+                if event["metadata"].get("langgraph_node") not in _streaming_nodes:
+                    continue
                 chunk = event["data"]["chunk"]
                 if getattr(chunk, "content", ""):
                     yield {"event": "token", "data": chunk.content}

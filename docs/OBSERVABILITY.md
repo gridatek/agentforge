@@ -61,7 +61,7 @@ docker compose -f docker-compose.yml -f docker-compose.langfuse.yml up --build
    ```
 3. Restart the api: `docker compose ... up -d api`.
 4. Ask a question, then refresh the Langfuse project — a trace per graph node
-   (guardrails → retrieve → generate → …) appears.
+   (guardrails → supervisor → retrieve → answer → …) appears.
 
 `LANGFUSE_HOST` is already set to `http://langfuse:3000` by the overlay. Set
 `LANGFUSE_NEXTAUTH_SECRET` and `LANGFUSE_SALT` in `.env` for anything beyond a
