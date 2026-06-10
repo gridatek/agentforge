@@ -70,6 +70,16 @@ class Settings(BaseSettings):
     # (see examples/). None keeps the built-in banking-compliance default.
     system_prompt: str | None = Field(default=None)
 
+    # --- Multi-tenancy ---------------------------------------------------
+    # Tenant identity comes from the X-Tenant-ID header and namespaces graph
+    # threads + the approval queue so tenants can't see/resume each other's
+    # runs. With require_tenant False (default), a request without the header
+    # falls back to default_tenant, so single-tenant deploys need no config.
+    # Set require_tenant True to reject requests that omit a valid tenant id.
+    # NOTE: the knowledge base is still shared across tenants at this stage.
+    default_tenant: str = Field(default="default")
+    require_tenant: bool = Field(default=False)
+
     # --- Guardrails ------------------------------------------------------
     redact_pii: bool = Field(default=True)
     # Tools that always require human approval before execution.
