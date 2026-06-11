@@ -35,6 +35,7 @@ class ApprovalRequest(BaseModel):
 
 
 class PendingApprovalItem(BaseModel):
+    tenant_id: str
     thread_id: str
     question: str
     created_at: float

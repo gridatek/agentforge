@@ -23,7 +23,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from langgraph.types import Command
 from sse_starlette.sse import EventSourceResponse
@@ -39,6 +39,7 @@ from agentforge.api.schemas import (
     PendingAction,
     PendingApprovalItem,
 )
+from agentforge.api.tenancy import resolve_tenant, scoped_thread, validate_thread_id
 from agentforge.config import get_settings
 from agentforge.observability import get_callbacks, metrics, setup_observability
 
@@ -161,49 +162,55 @@ def documents() -> list[DocumentSummaryItem]:
 
 
 @app.get("/approvals", response_model=list[PendingApprovalItem])
-def approval_queue() -> list[PendingApprovalItem]:
+def approval_queue(tenant: str = Depends(resolve_tenant)) -> list[PendingApprovalItem]:
     return [
         PendingApprovalItem(
+            tenant_id=p.tenant_id,
             thread_id=p.thread_id,
             question=p.question,
             created_at=p.created_at,
             action=p.action,
         )
-        for p in approvals.list_pending()
+        for p in approvals.list_pending(tenant)
     ]
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest) -> ChatResponse:
+def chat(req: ChatRequest, tenant: str = Depends(resolve_tenant)) -> ChatResponse:
     metrics.chat_requests_total.inc()
-    thread_id = req.thread_id or str(uuid.uuid4())
+    thread_id = validate_thread_id(req.thread_id) if req.thread_id else str(uuid.uuid4())
     graph = get_compiled_graph()
-    result = graph.invoke({"question": req.message}, config=_run_config(thread_id))
+    result = graph.invoke(
+        {"question": req.message}, config=_run_config(scoped_thread(tenant, thread_id))
+    )
     resp = _to_response(thread_id, result)
     _record_domain_metrics(resp)
     if resp.approval_required and resp.pending_action:
-        approvals.register(thread_id, resp.pending_action, req.message)
+        approvals.register(tenant, thread_id, resp.pending_action, req.message)
     return resp
 
 
 @app.post("/approve", response_model=ChatResponse)
-def approve(req: ApprovalRequest) -> ChatResponse:
+def approve(req: ApprovalRequest, tenant: str = Depends(resolve_tenant)) -> ChatResponse:
     metrics.approvals_total.labels(req.decision).inc()
+    thread_id = validate_thread_id(req.thread_id)
     graph = get_compiled_graph()
     result = graph.invoke(
-        Command(resume=req.decision), config=_run_config(req.thread_id)
+        Command(resume=req.decision), config=_run_config(scoped_thread(tenant, thread_id))
     )
-    approvals.resolve(req.thread_id)
-    resp = _to_response(req.thread_id, result)
+    approvals.resolve(tenant, thread_id)
+    resp = _to_response(thread_id, result)
     _record_domain_metrics(resp)
     return resp
 
 
 @app.post("/chat/stream")
-async def chat_stream(req: ChatRequest) -> EventSourceResponse:
-    thread_id = req.thread_id or str(uuid.uuid4())
+async def chat_stream(
+    req: ChatRequest, tenant: str = Depends(resolve_tenant)
+) -> EventSourceResponse:
+    thread_id = validate_thread_id(req.thread_id) if req.thread_id else str(uuid.uuid4())
     graph = get_compiled_graph()
-    config = _run_config(thread_id)
+    config = _run_config(scoped_thread(tenant, thread_id))
 
     # Only stream tokens from the answer-producing specialists — never the
     # supervisor, whose model emits a one-word routing label, not user output.
@@ -227,7 +234,7 @@ async def chat_stream(req: ChatRequest) -> EventSourceResponse:
         if snapshot.next:  # paused at an interrupt
             action = values.get("proposed_action") or {}
             if action:
-                approvals.register(thread_id, PendingAction(**action), req.message)
+                approvals.register(tenant, thread_id, PendingAction(**action), req.message)
             yield {
                 "event": "approval_required",
                 "data": json.dumps(action),
