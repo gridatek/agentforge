@@ -166,6 +166,9 @@ Chat UI + admin views: live traces, eval scores, approval queue. The full-stack 
 - ✅ Qdrant + alternative vector-store adapters
 - ✅ Additional reference examples (insurance, support)
 - Multi-tenancy
+  - ✅ Per-tenant thread + approval isolation
+  - ✅ Per-tenant knowledge-base isolation
+  - Pluggable auth (replace the trusted X-Tenant-ID header)
 
 ---
 

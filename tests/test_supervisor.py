@@ -17,7 +17,7 @@ def _config(thread_id: str) -> dict:
     return {"configurable": {"thread_id": thread_id}}
 
 
-def _no_retrieve(query: str):
+def _no_retrieve(query: str, tenant_id=None):
     raise AssertionError("knowledge path was taken on an action request")
 
 
@@ -47,7 +47,7 @@ def test_action_request_routes_to_act_agent_without_retrieval(fresh_graph, monke
 def test_unrecognized_classification_defaults_to_knowledge(fresh_graph, monkeypatch):
     # A garbage one-word reply must fall back to the safe (tool-less) path.
     monkeypatch.setattr(nodes, "get_fast_model", lambda: FakeChatModel(responses=[AIMessage("???")]))
-    monkeypatch.setattr(nodes, "retrieve", lambda q: empty_retrieval())
+    monkeypatch.setattr(nodes, "retrieve", lambda q, tenant_id=None: empty_retrieval())
     monkeypatch.setattr(
         nodes, "get_chat_model", lambda: FakeChatModel(responses=[AIMessage("Out of scope.")])
     )

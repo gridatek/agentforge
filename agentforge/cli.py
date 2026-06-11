@@ -2,6 +2,7 @@
 
     agentforge ingest [CORPUS_DIR]   # load a corpus into the vector store
     agentforge ask "QUESTION"        # one-shot query against the agent
+    agentforge backfill-tenant       # stamp untagged chunks with the default tenant
     agentforge serve                 # run the FastAPI gateway
 """
 
@@ -11,18 +12,34 @@ import argparse
 import uuid
 
 
+def _tenant(args: argparse.Namespace) -> str:
+    from agentforge.config import get_settings
+
+    return args.tenant or get_settings().default_tenant
+
+
 def _cmd_ingest(args: argparse.Namespace) -> None:
     from agentforge.rag.ingest import ingest
 
-    count = ingest(args.corpus_dir)
-    print(f"Ingested {count} chunks from {args.corpus_dir}")
+    tenant = _tenant(args)
+    count = ingest(args.corpus_dir, tenant)
+    print(f"Ingested {count} chunks from {args.corpus_dir} for tenant {tenant!r}")
+
+
+def _cmd_backfill_tenant(args: argparse.Namespace) -> None:
+    from agentforge.rag.store import backfill_tenant
+
+    tenant = _tenant(args)
+    count = backfill_tenant(tenant)
+    print(f"Backfilled {count} untagged chunks to tenant {tenant!r}")
 
 
 def _cmd_ask(args: argparse.Namespace) -> None:
     from agentforge.agents import get_compiled_graph
 
     config = {"configurable": {"thread_id": str(uuid.uuid4())}}
-    result = get_compiled_graph().invoke({"question": args.question}, config=config)
+    invoke_input = {"question": args.question, "tenant_id": _tenant(args)}
+    result = get_compiled_graph().invoke(invoke_input, config=config)
     if result.get("__interrupt__"):
         print("[approval required]", result["__interrupt__"][0].value)
     else:
@@ -49,10 +66,18 @@ def main() -> None:
     p_ingest.add_argument(
         "corpus_dir", nargs="?", default="examples/banking-compliance/corpus"
     )
+    p_ingest.add_argument("--tenant", help="Tag chunks for this tenant (default: DEFAULT_TENANT)")
     p_ingest.set_defaults(func=_cmd_ingest)
+
+    p_backfill = sub.add_parser(
+        "backfill-tenant", help="Stamp untagged chunks with the default (or given) tenant"
+    )
+    p_backfill.add_argument("--tenant", help="Tenant id to stamp (default: DEFAULT_TENANT)")
+    p_backfill.set_defaults(func=_cmd_backfill_tenant)
 
     p_ask = sub.add_parser("ask", help="One-shot query against the agent")
     p_ask.add_argument("question")
+    p_ask.add_argument("--tenant", help="Scope retrieval to this tenant (default: DEFAULT_TENANT)")
     p_ask.set_defaults(func=_cmd_ask)
 
     p_serve = sub.add_parser("serve", help="Run the FastAPI gateway")

@@ -11,8 +11,9 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 
+from agentforge.config import get_settings
 from agentforge.rag.chunking import split_documents
-from agentforge.rag.store import get_vector_store
+from agentforge.rag.store import TENANT_FIELD, get_vector_store
 
 SUPPORTED_SUFFIXES = {".md", ".txt", ".markdown"}
 
@@ -37,25 +38,33 @@ def load_corpus(corpus_dir: str | Path) -> list[Document]:
     return documents
 
 
-def ingest(corpus_dir: str | Path) -> int:
-    """Load → chunk → embed → store. Returns the number of chunks written."""
+def ingest(corpus_dir: str | Path, tenant_id: str | None = None) -> int:
+    """Load → chunk → tag with tenant → embed → store. Returns chunks written.
+
+    Every chunk is stamped with ``tenant_id`` so retrieval can scope to one
+    tenant's knowledge base. Defaults to the configured default tenant.
+    """
+    tenant = tenant_id or get_settings().default_tenant
     documents = load_corpus(corpus_dir)
     chunks = split_documents(documents)
+    for chunk in chunks:
+        chunk.metadata[TENANT_FIELD] = tenant
     if chunks:
         get_vector_store().add_documents(chunks)
     return len(chunks)
 
 
-def ingest_if_empty(corpus_dir: str | Path) -> int:
-    """Ingest only when the store is empty — idempotent across restarts.
+def ingest_if_empty(corpus_dir: str | Path, tenant_id: str | None = None) -> int:
+    """Ingest only when the tenant's store is empty — idempotent across restarts.
 
     Returns the number of chunks written (0 if already populated).
     """
     from agentforge.rag.store import collection_is_empty
 
-    if not collection_is_empty():
+    tenant = tenant_id or get_settings().default_tenant
+    if not collection_is_empty(tenant):
         return 0
-    return ingest(corpus_dir)
+    return ingest(corpus_dir, tenant)
 
 
 def main() -> None:

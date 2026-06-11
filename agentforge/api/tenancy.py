@@ -1,12 +1,11 @@
 """Tenant identity + per-tenant scoping for graph threads and approvals.
 
-Step 1 of multi-tenancy: install the seam. The tenant is taken from the
-``X-Tenant-ID`` header (trusted for now — authentication arrives in a later
-step) and used to namespace checkpoint threads and the approval registry, so
-one tenant can never see or resume another's runs.
-
-What this does *not* yet do: isolate the knowledge base. All tenants still
-share one corpus at this stage — that is a separate, later step.
+The tenant is taken from the ``X-Tenant-ID`` header (trusted for now —
+authentication arrives in a later step) and used to namespace checkpoint
+threads and the approval registry, so one tenant can never see or resume
+another's runs. The knowledge base is scoped separately (chunks are tagged with
+tenant_id at ingest and retrieval is filtered to the caller's tenant); see
+``agentforge.rag.store.tenant_filter``.
 """
 
 from __future__ import annotations

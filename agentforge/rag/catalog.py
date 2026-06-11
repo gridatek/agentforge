@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from agentforge.config import Settings, get_settings, libpq_url
 
 # Group the collection's chunks by source document. Joins the embedding rows to
-# their collection by name so we only count this app's collection.
+# their collection by name so we only count this app's collection, and scopes to
+# one tenant's documents via the tenant_id metadata tag.
 _SQL = """
 SELECT
     e.cmetadata ->> 'source'  AS source,
@@ -22,6 +23,7 @@ SELECT
 FROM langchain_pg_embedding e
 JOIN langchain_pg_collection c ON c.uuid = e.collection_id
 WHERE c.name = %s
+  AND e.cmetadata ->> 'tenant_id' = %s
 GROUP BY e.cmetadata ->> 'source'
 ORDER BY source
 """
@@ -34,28 +36,39 @@ class DocumentSummary:
     chunks: int
 
 
-def _from_pgvector(settings: Settings) -> list[DocumentSummary]:
+def _from_pgvector(settings: Settings, tenant_id: str) -> list[DocumentSummary]:
     import psycopg
 
     with psycopg.connect(libpq_url(settings.database_url), connect_timeout=3) as conn:
-        rows = conn.execute(_SQL, (settings.collection_name,)).fetchall()
+        rows = conn.execute(_SQL, (settings.collection_name, tenant_id)).fetchall()
     return [
         DocumentSummary(source=row[0] or "(unknown)", title=row[1] or "", chunks=row[2])
         for row in rows
     ]
 
 
-def _from_qdrant(settings: Settings) -> list[DocumentSummary]:
-    from qdrant_client import QdrantClient
+def _from_qdrant(settings: Settings, tenant_id: str) -> list[DocumentSummary]:
+    from qdrant_client import QdrantClient, models
 
     client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
     titles: dict[str, str] = {}
     chunks: dict[str, int] = defaultdict(int)
 
+    scope = models.Filter(
+        must=[
+            models.FieldCondition(
+                key="metadata.tenant_id", match=models.MatchValue(value=tenant_id)
+            )
+        ]
+    )
     offset = None
     while True:
         points, offset = client.scroll(
-            settings.collection_name, with_payload=True, limit=256, offset=offset
+            settings.collection_name,
+            scroll_filter=scope,
+            with_payload=True,
+            limit=256,
+            offset=offset,
         )
         for point in points:
             meta = (point.payload or {}).get("metadata", {})
@@ -71,13 +84,14 @@ def _from_qdrant(settings: Settings) -> list[DocumentSummary]:
     ]
 
 
-def list_documents() -> list[DocumentSummary]:
-    """One row per ingested source document, or ``[]`` if the store is unreachable."""
+def list_documents(tenant_id: str | None = None) -> list[DocumentSummary]:
+    """One row per ingested source document for the tenant, or ``[]`` if unreachable."""
     settings = get_settings()
+    tenant = tenant_id or settings.default_tenant
     try:
         if settings.vector_store_backend.lower() == "qdrant":
-            return _from_qdrant(settings)
-        return _from_pgvector(settings)
+            return _from_qdrant(settings, tenant)
+        return _from_pgvector(settings, tenant)
     except Exception:
         # Store not provisioned yet / unreachable / extra missing — empty catalog.
         return []
