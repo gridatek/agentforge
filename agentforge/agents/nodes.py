@@ -83,7 +83,7 @@ def supervisor_node(state: AgentState) -> dict:
 
 
 def retrieve_node(state: AgentState) -> dict:
-    result = retrieve(state["redacted_question"])
+    result = retrieve(state["redacted_question"], state.get("tenant_id"))
     return {
         "context": result.context_block(),
         "citations": [c.__dict__ for c in result.citations],

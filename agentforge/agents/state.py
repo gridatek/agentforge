@@ -20,6 +20,10 @@ class AgentState(TypedDict, total=False):
     redacted_question: str
     pii_found: list[str]
 
+    # Tenant whose knowledge base retrieval is scoped to. Set by the API from
+    # the resolved tenant; falls back to the default tenant when absent.
+    tenant_id: str
+
     # Supervisor routing decision: "knowledge" (answer from docs) | "action"
     # (perform a sensitive operation). Set by ``supervisor_node``.
     route: str

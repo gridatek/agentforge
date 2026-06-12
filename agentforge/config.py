@@ -72,11 +72,12 @@ class Settings(BaseSettings):
 
     # --- Multi-tenancy ---------------------------------------------------
     # Tenant identity comes from the X-Tenant-ID header and namespaces graph
-    # threads + the approval queue so tenants can't see/resume each other's
-    # runs. With require_tenant False (default), a request without the header
-    # falls back to default_tenant, so single-tenant deploys need no config.
-    # Set require_tenant True to reject requests that omit a valid tenant id.
-    # NOTE: the knowledge base is still shared across tenants at this stage.
+    # threads, the approval queue, and the knowledge base (chunks are tagged with
+    # tenant_id at ingest and retrieval is filtered to the caller's tenant) so
+    # tenants can't see/resume each other's runs or documents. With
+    # require_tenant False (default), a request without the header falls back to
+    # default_tenant, so single-tenant deploys need no config. Set require_tenant
+    # True to reject requests that omit a valid tenant id.
     default_tenant: str = Field(default="default")
     require_tenant: bool = Field(default=False)
 

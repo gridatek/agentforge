@@ -50,6 +50,18 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     setup_observability()
+    # Stamp any pre-multitenancy (untagged) chunks as the default tenant so an
+    # existing single-tenant corpus keeps answering with zero re-ingest.
+    try:
+        from agentforge.rag.store import backfill_tenant
+
+        stamped = backfill_tenant(settings.default_tenant)
+        if stamped:
+            logger.info(
+                "Backfilled %d untagged chunks to tenant %r", stamped, settings.default_tenant
+            )
+    except Exception:
+        logger.warning("Tenant backfill skipped (store not ready)", exc_info=True)
     if settings.auto_ingest:
         try:
             from agentforge.rag.ingest import ingest_if_empty
@@ -152,12 +164,12 @@ def evals() -> EvalReport | None:
 
 
 @app.get("/documents", response_model=list[DocumentSummaryItem])
-def documents() -> list[DocumentSummaryItem]:
+def documents(tenant: str = Depends(resolve_tenant)) -> list[DocumentSummaryItem]:
     from agentforge.rag.catalog import list_documents
 
     return [
         DocumentSummaryItem(source=d.source, title=d.title, chunks=d.chunks)
-        for d in list_documents()
+        for d in list_documents(tenant)
     ]
 
 
@@ -181,7 +193,8 @@ def chat(req: ChatRequest, tenant: str = Depends(resolve_tenant)) -> ChatRespons
     thread_id = validate_thread_id(req.thread_id) if req.thread_id else str(uuid.uuid4())
     graph = get_compiled_graph()
     result = graph.invoke(
-        {"question": req.message}, config=_run_config(scoped_thread(tenant, thread_id))
+        {"question": req.message, "tenant_id": tenant},
+        config=_run_config(scoped_thread(tenant, thread_id)),
     )
     resp = _to_response(thread_id, result)
     _record_domain_metrics(resp)
@@ -220,7 +233,7 @@ async def chat_stream(
         yield {"event": "thread", "data": thread_id}
         # Stream LLM tokens as the answer/act_agent specialists produce them.
         async for event in graph.astream_events(
-            {"question": req.message}, config=config, version="v2"
+            {"question": req.message, "tenant_id": tenant}, config=config, version="v2"
         ):
             if event["event"] == "on_chat_model_stream":
                 if event["metadata"].get("langgraph_node") not in _streaming_nodes:

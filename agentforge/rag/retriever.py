@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from langchain_core.documents import Document
 
 from agentforge.config import get_settings
-from agentforge.rag.store import get_vector_store
+from agentforge.rag.store import get_vector_store, tenant_filter
 
 
 @dataclass
@@ -50,12 +50,18 @@ class RetrievalResult:
         return "\n\n".join(parts)
 
 
-def retrieve(query: str) -> RetrievalResult:
+def retrieve(query: str, tenant_id: str | None = None) -> RetrievalResult:
     settings = get_settings()
     store = get_vector_store()
 
+    # Scope retrieval to the tenant's chunks; default tenant when unset so
+    # single-tenant callers keep working unchanged.
+    tenant = tenant_id or settings.default_tenant
+
     # Normalized relevance in [0, 1]; higher means more similar.
-    scored = store.similarity_search_with_relevance_scores(query, k=settings.retrieval_k)
+    scored = store.similarity_search_with_relevance_scores(
+        query, k=settings.retrieval_k, filter=tenant_filter(tenant)
+    )
 
     result = RetrievalResult()
     for doc, relevance in scored:

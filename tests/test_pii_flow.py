@@ -11,7 +11,7 @@ from tests.fakes import FakeChatModel, empty_retrieval, route_model
 def test_pii_redacted_before_retrieval(fresh_graph, monkeypatch):
     seen: dict[str, str] = {}
 
-    def spy_retrieve(query: str):
+    def spy_retrieve(query: str, tenant_id=None):
         seen["query"] = query
         return empty_retrieval()
 

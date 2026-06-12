@@ -14,7 +14,7 @@ def _config(thread_id: str) -> dict:
 
 def test_grounded_answer_includes_citations(fresh_graph, monkeypatch):
     monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("knowledge"))
-    monkeypatch.setattr(nodes, "retrieve", lambda q: grounded_retrieval())
+    monkeypatch.setattr(nodes, "retrieve", lambda q, tenant_id=None: grounded_retrieval())
     monkeypatch.setattr(
         nodes,
         "get_chat_model",
@@ -33,7 +33,7 @@ def test_grounded_answer_includes_citations(fresh_graph, monkeypatch):
 
 def test_out_of_scope_question_is_refused(fresh_graph, monkeypatch):
     monkeypatch.setattr(nodes, "get_fast_model", lambda: route_model("knowledge"))
-    monkeypatch.setattr(nodes, "retrieve", lambda q: empty_retrieval())
+    monkeypatch.setattr(nodes, "retrieve", lambda q, tenant_id=None: empty_retrieval())
     monkeypatch.setattr(
         nodes,
         "get_chat_model",
