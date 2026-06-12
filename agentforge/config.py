@@ -81,6 +81,24 @@ class Settings(BaseSettings):
     default_tenant: str = Field(default="default")
     require_tenant: bool = Field(default=False)
 
+    # --- Auth ------------------------------------------------------------
+    # How callers are authenticated, and where the tenant comes from:
+    #   "none"    — no auth; the X-Tenant-ID header is trusted (dev / single-
+    #               tenant). This is the zero-config default.
+    #   "api_key" — a static "<key>:<tenant>,..." map (api_keys); the bearer
+    #               key authenticates the caller and fixes its tenant.
+    #   "oidc"    — an RS256 JWT validated against oidc_jwks_url or a static
+    #               oidc_public_key; the tenant is read from oidc_tenant_claim.
+    # With api_key/oidc the credential carries the tenant, so X-Tenant-ID is
+    # ignored — a caller can only act as the tenant its credential grants.
+    auth_backend: str = Field(default="none")
+    api_keys: str = Field(default="")
+    oidc_jwks_url: str | None = None
+    oidc_public_key: str | None = None
+    oidc_issuer: str | None = None
+    oidc_audience: str | None = None
+    oidc_tenant_claim: str = Field(default="tenant")
+
     # --- Guardrails ------------------------------------------------------
     redact_pii: bool = Field(default=True)
     # Tools that always require human approval before execution.
